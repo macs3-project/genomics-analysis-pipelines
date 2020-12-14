@@ -1,2 +1,3 @@
-# tliu-bioinfo-pipelines
-Pipeline codes for analyzing various genomics datasets
+# Pipelines made for functional genomics data analysis
+
+MACS3 in Snakemake. Experimental pipelines.
