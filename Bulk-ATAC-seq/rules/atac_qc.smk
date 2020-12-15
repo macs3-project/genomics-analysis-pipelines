@@ -8,7 +8,7 @@ rule atac_qcstat:
         uniq_bed = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.rmdp.unique.bed",
         uniq_clean_bed = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.rmdp.unique.clean.bed",
     params:
-        promoter = config["annotation"]["promoter"]
+        promoter = config["annotation"]["promoter"],
         chrMregion = config["annotation"]["MtBed"],
     threads:
         config["options"]["cores"]
@@ -22,9 +22,9 @@ rule atac_qcstat:
         "bedtools bamtobed -i {output.uniq_bam} > {output.uniq_bed};"
         "wc -l {output.uniq_bed} >> {output.qc_stat};"
         "echo 'chrM reads:' >> {output.qc_stat};"
-        "bedtools intersect -a {output.bed} -b {params.chrMregion} -u | wc -l >> {output.qc_stat};"
+        "bedtools intersect -a {output.uniq_bed} -b {params.chrMregion} -u | wc -l >> {output.qc_stat};"
         "echo 'non chrM reads:' >> {output.qc_stat};"
-        "bedtools intersect -a {output.bed} -b {params.chrMregion} -v > {output.uniq_clean_bed};"
+        "bedtools intersect -a {output.uniq_bed} -b {params.chrMregion} -v > {output.uniq_clean_bed};"
         "wc -l {output.uniq_clean_bed} >> {output.qc_stat};"
         "echo 'non chrM reads in promoter:' >> {output.qc_stat};"
         "bedtools intersect -a {output.uniq_clean_bed} -b {params.promoter} -u | wc -l >> {output.qc_stat};"

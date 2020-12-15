@@ -36,7 +36,7 @@ rule atac_callpeak:
     benchmark:
         "{OUT_DIR}/Benchmark/{fastqid}_callpeak.benchmark"
     shell:
-        "macs2 callpeak -g hs --outdir Result/Analysis -n {params.name} --keep-dup all -B -q 0.05 -f BAMPE --SPMR -t {input.bam};"
+        "macs2 callpeak -g hs --outdir {OUT_DIR}/Analysis -n {params.name} --keep-dup all -B -q 0.05 -f BAMPE --SPMR -t {input.bam};"
 
 # bdg2bw converts bedGraph to bigWig files
 rule atac_bdg2bw:
