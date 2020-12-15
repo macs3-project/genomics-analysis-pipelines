@@ -13,12 +13,12 @@ ALL_SAMPLES2 = config["samples2"]
 
 OUT_DIR = config["outprefix"] + "_Result"
 
-PEAKS1   = expand("Result/Analysis/{sample}_peaks.narrowPeak", sample=ALL_SAMPLES1)
-PEAKS2   = expand("Result/Analysis/{sample}_peaks.narrowPeak", sample=ALL_SAMPLES2)
-SEQSTAT1 = expand("Result/QC/{sample}.stat.txt", sample=ALL_SAMPLES1)
-SEQSTAT2 = expand("Result/QC/{sample}.stat.txt", sample=ALL_SAMPLES2)
-PEAKSTAT1= expand("Result/QC/{sample}.peakstat.txt", sample=ALL_SAMPLES1)
-PEAKSTAT2= expand("Result/QC/{sample}.peakstat.txt", sample=ALL_SAMPLES2)
+PEAKS1   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=ALL_SAMPLES1)
+PEAKS2   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=ALL_SAMPLES2)
+SEQSTAT1 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=ALL_SAMPLES1)
+SEQSTAT2 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=ALL_SAMPLES2)
+PEAKSTAT1= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=ALL_SAMPLES1)
+PEAKSTAT2= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=ALL_SAMPLES2)
 
 TARGET = []
 TARGET.extend(PEAKS1 + PEAKS2 + SEQSTAT1 + SEQSTAT2 + PEAKSTAT1 + PEAKSTAT2 )

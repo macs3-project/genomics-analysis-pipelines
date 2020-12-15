@@ -1,39 +1,42 @@
 rule atac_qcstat:
     input:
-        bam = "Result/minimap2/{fastqid}.sortedByPos.rmdp.clean.bam",
-        peak = "Result/Analysis/{fastqid}_peaks.narrowPeak",
+        dirty_bam = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.mkdp.bam",
+        peak = "{OUT_DIR}/Analysis/{fastqid}_peaks.narrowPeak",
     output:
-        qc_stat = "Result/QC/{fastqid}.stat.txt",
-        bam = "Result/minimap2/{fastqid}.sortedByPos.rmdp.clean.unique.bam",
-        bed = "Result/minimap2/{fastqid}.sortedByPos.rmdp.clean.unique.bed",
+        qc_stat = "{OUT_DIR}/QC/{fastqid}.stat.txt",
+        uniq_bam = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.rmdp.unique.bam",
+        uniq_bed = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.rmdp.unique.bed",
+        uniq_clean_bed = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.rmdp.unique.clean.bed",
     params:
         promoter = config["annotation"]["promoter"]
+        chrMregion = config["annotation"]["MtBed"],
     threads:
         config["options"]["cores"]
     benchmark:
-        "Result/Benchmark/{fastqid}_BulkQCStat.benchmark"
+        "{OUT_DIR}/Benchmark/{fastqid}_BulkQCStat.benchmark"
     shell:
         "echo 'flagstat:' > {output.qc_stat};"
-        "samtools flagstat --threads {threads} {input.bam} >> {output.qc_stat};"
-        "samtools view -F 2316 -f 0x2 -q 30 -b -o {output.bam} {input.bam};"
+        "samtools flagstat --threads {threads} {input.dirty_bam} >> {output.qc_stat};"
+        "samtools view --threads {threads} -b -F 3340 -f 0x2 -q 30 -o {output.uniq_bam} {input.dirty_bam};"
         "echo 'mapped Q30 reads:' >> {output.qc_stat};"
-        "samtools view {output.bam} -c >> {output.qc_stat};"
-        "bedtools bamtobed -i {output.bam} > {output.bed};"
+        "bedtools bamtobed -i {output.uniq_bam} > {output.uniq_bed};"
+        "wc -l {output.uniq_bed} >> {output.qc_stat};"
         "echo 'chrM reads:' >> {output.qc_stat};"
-        "grep -c 'chrM' {output.bed} >> {output.qc_stat} || true;"
+        "bedtools intersect -a {output.bed} -b {params.chrMregion} -u | wc -l >> {output.qc_stat};"
         "echo 'non chrM reads:' >> {output.qc_stat};"
-        "grep -v 'chrM' -c {output.bed} >> {output.qc_stat};"
+        "bedtools intersect -a {output.bed} -b {params.chrMregion} -v > {output.uniq_clean_bed};"
+        "wc -l {output.uniq_clean_bed} >> {output.qc_stat};"
         "echo 'non chrM reads in promoter:' >> {output.qc_stat};"
-        "grep -v 'chrM' {output.bed} | bedtools intersect -wa -a - -b {params.promoter} -u | wc -l >> {output.qc_stat} || true;"
+        "bedtools intersect -a {output.uniq_clean_bed} -b {params.promoter} -u | wc -l >> {output.qc_stat};"
         "echo 'non chrM reads in peak:' >> {output.qc_stat};"
-        "grep -v 'chrM' {output.bed} | bedtools intersect -wa -a - -b {input.peak} -u | wc -l >> {output.qc_stat} || true ;"
+        "bedtools intersect -a {output.uniq_clean_bed} -b {input.peak} -u | wc -l >> {output.qc_stat};"
 
 rule atac_peakqc:
     input:
-        peak = "Result/Analysis/{fastqid}_peaks.narrowPeak",
-        peakxls = "Result/Analysis/{fastqid}_peaks.xls",
+        peak = "{OUT_DIR}/Analysis/{fastqid}_peaks.narrowPeak",
+        peakxls = "{OUT_DIR}/Analysis/{fastqid}_peaks.xls",
     output:
-        peak_qc = "Result/QC/{fastqid}.peakstat.txt",
+        peak_qc = "{OUT_DIR}/QC/{fastqid}.peakstat.txt",
     params:
         promoter = config["annotation"]["promoter"],
         chrMregion = config["annotation"]["MtBed"],
@@ -42,10 +45,9 @@ rule atac_peakqc:
     threads:
         config["options"]["cores"],
     benchmark:
-        "Result/Benchmark/{fastqid}_PeakQCStat.benchmark",
+        "{OUT_DIR}/Benchmark/{fastqid}_PeakQCStat.benchmark",
     shell:
         "grep 'total fragments in treatment' {input.peakxls} | perl -pe 's/# //' > {output.peak_qc};"
-        #"grep 'fragments after filtering in treatment' {input.peakxls} | perl -pe 's/# //' >> {output.peak_qc};"
         "echo 'total number of peaks:' >> {output.peak_qc};"
         "wc -l {input.peak} | cut -f 1 -d' ' >> {output.peak_qc};"
         "echo 'number of peaks over FC 2:' >> {output.peak_qc};"
@@ -53,7 +55,7 @@ rule atac_peakqc:
         "echo 'number of peaks in blacklist regions:' >> {output.peak_qc};"
         "bedtools intersect -a {input.peak} -b {params.blacklist} -u | wc -l >> {output.peak_qc};"
         "echo 'number of peaks in chrM:' >> {output.peak_qc};"
-        "grep -w chrM {input.peak} | wc -l >> {output.peak_qc};"
+        "bedtools intersect -a {input.peak} -b {params.chrMregion} -u | wc -l >> {output.peak_qc};"
         "echo 'number of peaks in promoter regions:' >> {output.peak_qc};"
         "bedtools intersect -a {input.peak} -b {params.promoter} -u | wc -l >> {output.peak_qc};"
         "echo 'number of peaks in DHS regions:' >> {output.peak_qc};"
@@ -61,10 +63,10 @@ rule atac_peakqc:
 
 rule atac_frag:
     input:
-        bam = "Result/minimap2/{fastqid}.sortedByPos.rmdp.clean.unique.bam",
+        clean_bam = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.rmdp.clean.bam"
     output:
-        insertl = "Result/minimap2/{fastqid}.sortedByPos.rmdp.clean.unique.bam.insertl",
-        insertlsum = "Result/minimap2/{fastqid}.sortedByPos.rmdp.clean.unique.bam.insertl.txt",        
+        insertl = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.rmdp.clean.unique.bam.insertl",
+        insertlsum = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.rmdp.clean.unique.bam.insertl.txt",        
     shell:
-        "samtools view {input.bam} | cut -f 9 | awk '$1>0{{print}}' > {output.insertl};"
+        "samtools view {input.clean_bam} | cut -f 9 | awk '$1>0{{print}}' > {output.insertl};"
         "perl -e 'while(<>){{chomp;$bin=int($_/10);$count{{$bin}}+=1}}foreach my $key (sort {{$a<=>$b}} keys %count){print $key*10,'\t',$count{{$key}},'\n'}' {output.insertl} > {output.insertlsum};"

@@ -2,9 +2,9 @@ if mapper == "minimap2":
     rule atac_map:
         input:
             fastq1 = "%s/{fastqid}_R1.fastq.gz" % (config["fastqdir"]),
-            fastq2 = "%s/{fastqid}_R2.fastq.gz" % (config["fastqdir"])
+            fastq2 = "%s/{fastqid}_R2.fastq.gz" % (config["fastqdir"]),
         output:
-            bam = temp("Result/minimap2/{fastqid}.sortedByPos.bam")
+            bam = temp("{OUT_DIR}/Alignment/{fastqid}.sortedByPos.bam")
         params:
             genome = config["genome"]["mmi"],
         threads:
@@ -20,7 +20,7 @@ elif mapper == "bwa-mem":
             fastq1 = "%s/{fastqid}_R1.fastq.gz" % (config["fastqdir"]),
             fastq2 = "%s/{fastqid}_R2.fastq.gz" % (config["fastqdir"])
         output:
-            bam = temp("Result/minimap2/{fastqid}.sortedByPos.bam")
+            bam = temp("{OUT_DIR}/Alignment/{fastqid}.sortedByPos.bam")
         params:
             genome = config["genome"]["bwaindex"],
         threads:
