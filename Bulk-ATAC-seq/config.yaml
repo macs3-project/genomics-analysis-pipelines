@@ -18,8 +18,9 @@ options:
   # Choose minimap2 if read is long and speed is a concern
   # Choose bwa-mem for traditional NGS data
   mapper: bwa-mem
+  # macs3 related options
   # species
-  species: GRCh38
+  species: hs
   # pvalue or qvalue
   peakcalling_cutoff_method: qvalue
   # cutoff value

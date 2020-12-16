@@ -25,12 +25,12 @@ TARGET.extend(PEAKS1 + PEAKS2 + SEQSTAT1 + SEQSTAT2 + PEAKSTAT1 + PEAKSTAT2 )
 
 # decide certain parameters based on config.yaml
 mapper = config["options"]["mapper"]
-macs2_genome_option = " -g hs " if config["options"]["species"] == "GRCh38" else " -g mm "
-macs2_cutoff_option = " -p " if config["options"]["peakcalling_cutoff_method"] == "pvalue" else " -q "
-macs2_cutoff_option += str(config["options"]["peakcalling_cutoff"])
-macs2_format_option = " -f BAMPE " if config["options"]["peakcalling_PE_mode"] == "Y" else " -f BAM "
-macs2_lambda_option = " --nolambda " if config["options"]["peakcalling_disable_lambda"] == "Y" else " "
-macs2_option = f"{macs2_genome_option} {macs2_cutoff_option} {macs2_lambda_option} {macs2_format_option}"
+macs3_genome_option = " -g %s " %s ( config["options"]["species"] )
+macs3_cutoff_option = " -p " if config["options"]["peakcalling_cutoff_method"] == "pvalue" else " -q "
+macs3_cutoff_option += str(config["options"]["peakcalling_cutoff"])
+macs3_format_option = " -f BAMPE " if config["options"]["peakcalling_PE_mode"] == "Y" else " -f BAM "
+macs3_lambda_option = " --nolambda " if config["options"]["peakcalling_disable_lambda"] == "Y" else " "
+macs3_option = f"--keep-dup all -B --SPMR {macs3_genome_option} {macs3_cutoff_option} {macs3_lambda_option} {macs3_format_option}"
 
 # one line to rule all
 
@@ -40,7 +40,7 @@ rule all:
 # ---- all the following rules are common rules for analyzing a single dataset ---
 
 include: "rules/atac_mapping.smk"
-include: "rules/atac_macs2.smk"
+include: "rules/atac_macs.smk"
 #include: "rules/atac_peak_annotating.smk"
 include: "rules/atac_qc.smk"
 
