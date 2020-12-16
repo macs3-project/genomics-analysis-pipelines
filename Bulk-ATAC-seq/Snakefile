@@ -25,7 +25,7 @@ TARGET.extend(PEAKS1 + PEAKS2 + SEQSTAT1 + SEQSTAT2 + PEAKSTAT1 + PEAKSTAT2 )
 
 # decide certain parameters based on config.yaml
 mapper = config["options"]["mapper"]
-macs3_genome_option = " -g %s " %s ( config["options"]["species"] )
+macs3_genome_option = " -g %s " % ( config["options"]["species"] )
 macs3_cutoff_option = " -p " if config["options"]["peakcalling_cutoff_method"] == "pvalue" else " -q "
 macs3_cutoff_option += str(config["options"]["peakcalling_cutoff"])
 macs3_format_option = " -f BAMPE " if config["options"]["peakcalling_PE_mode"] == "Y" else " -f BAM "
