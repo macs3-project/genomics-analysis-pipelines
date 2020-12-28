@@ -8,19 +8,23 @@ import yaml
 import sys
 import os
 
-ALL_SAMPLES1 = config["samples1"]
-ALL_SAMPLES2 = config["samples2"]
+# file prefix
+SAMPLE1_FILES = config["sample1fileprefix"]
+SAMPLE2_FILES = config["sample2fileprefix"]
 
 OUT_DIR = config["outprefix"] + "_Result"
 
-PEAKS1   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=ALL_SAMPLES1)
-PEAKS2   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=ALL_SAMPLES2)
-SEQSTAT1 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=ALL_SAMPLES1)
-SEQSTAT2 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=ALL_SAMPLES2)
-PEAKSTAT1= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=ALL_SAMPLES1)
-PEAKSTAT2= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=ALL_SAMPLES2)
-FRAGSTAT1= expand("%s/Alignment/{sample}.sortedByPos.rmdp.clean.unique.bam.insertl.txt" % (OUT_DIR), sample=ALL_SAMPLES1)
-FRAGSTAT2= expand("%s/Alignment/{sample}.sortedByPos.rmdp.clean.unique.bam.insertl.txt" % (OUT_DIR), sample=ALL_SAMPLES2)
+# individual sample
+SAMPLE1_NAMES = expand("%s_r{i}" % config["sample1"], i = range( 1, len( SAMPLE1_FILES ) + 1 ) )
+SAMPLE2_NAMES = expand("%s_r{i}" % config["sample2"], i = range( 1, len( SAMPLE2_FILES ) + 1 ) )
+PEAKS1   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=SAMPLE1_NAMES)
+PEAKS2   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=SAMPLE2_NAMES)
+SEQSTAT1 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=SAMPLE1_NAMES)
+SEQSTAT2 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=SAMPLE2_NAMES)
+PEAKSTAT1= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=SAMPLE1_NAMES)
+PEAKSTAT2= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=SAMPLE2_NAMES)
+FRAGSTAT1= expand("%s/Alignment/{sample}.sortedByPos.rmdp.clean.unique.bam.insertl.txt" % (OUT_DIR), sample=SAMPLE1_NAMES)
+FRAGSTAT2= expand("%s/Alignment/{sample}.sortedByPos.rmdp.clean.unique.bam.insertl.txt" % (OUT_DIR), sample=SAMPLE2_NAMES)
 
 TARGET = []
 TARGET.extend(PEAKS1 + PEAKS2 + SEQSTAT1 + SEQSTAT2 + PEAKSTAT1 + PEAKSTAT2 + FRAGSTAT1 + FRAGSTAT2 )

@@ -1,10 +1,12 @@
+# wild card is "i"
+
 if mapper == "minimap2":
     rule atac_map:
         input:
-            fastq1 = "%s/{fastqid}_R1.fastq.gz" % (config["fastqdir"]),
-            fastq2 = "%s/{fastqid}_R2.fastq.gz" % (config["fastqdir"]),
+            fastq1 = "%s/%s_R1.fastq.gz" % (config["fastqdir"], SAMPLE1_FILES[{i}-1]),
+            fastq2 = "%s/%s_R2.fastq.gz" % (config["fastqdir"], SAMPLE1_FILES[{i}-1]),
         output:
-            bam = temp("{OUT_DIR}/Alignment/{fastqid}.sortedByPos.bam")
+            bam = temp("{OUT_DIR}/Alignment/%s.sortedByPos.bam" % SAMPLE1_NAMES[{i}-1])
         params:
             genome = config["genome"]["mmi"],
         threads:
@@ -17,10 +19,10 @@ if mapper == "minimap2":
 elif mapper == "bwa-mem":
     rule atac_map:
         input:
-            fastq1 = "%s/{fastqid}_R1.fastq.gz" % (config["fastqdir"]),
-            fastq2 = "%s/{fastqid}_R2.fastq.gz" % (config["fastqdir"])
+            fastq1 = "%s/%s_R1.fastq.gz" % (config["fastqdir"], SAMPLE1_FILES[{i}-1]),
+            fastq2 = "%s/%s_R2.fastq.gz" % (config["fastqdir"], SAMPLE1_FILES[{i}-1]),
         output:
-            bam = temp("{OUT_DIR}/Alignment/{fastqid}.sortedByPos.bam")
+            bam = temp("{OUT_DIR}/Alignment/%s.sortedByPos.bam" % SAMPLE1_NAMES[{i}-1])
         params:
             genome = config["genome"]["bwaindex"],
         threads:

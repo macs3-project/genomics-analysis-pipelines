@@ -3,10 +3,16 @@ outprefix: EXPNAME
 # raw data location
 fastqdir: /path/to/fastq/files/
 
-# sample names for condition 1, fastq files in fastqdir should be NAME_R1.fastq.gz and NAME_R2.fastq.gz
-samples1: [cond1_rep1, cond1_rep2, cond1_rep3, cond1_rep4]
-# sample names for condition 2, fastq files in fastqdir should be NAME_R1.fastq.gz and NAME_R2.fastq.gz
-samples2: [cond2_rep1, cond2_rep2, cond2_rep3, cond2_rep4]
+# sample name for condition 1
+sample1: sample_name1
+
+# sample name for condition 2
+sample2: sample_name2
+
+# sample raw filename prefix for condition 1, fastq files in fastqdir should be NAME_R1.fastq.gz and NAME_R2.fastq.gz
+sample1fileprefix: [cond1_rep1, cond1_rep2, cond1_rep3, cond1_rep4]
+# sample raw filename prefix for condition 2, fastq files in fastqdir should be NAME_R1.fastq.gz and NAME_R2.fastq.gz
+sample2fileprefix: [cond2_rep1, cond2_rep2, cond2_rep3, cond2_rep4]
 
 options:
   # options for the analysis
