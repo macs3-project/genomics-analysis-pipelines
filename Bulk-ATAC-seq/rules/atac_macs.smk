@@ -1,11 +1,11 @@
 # mark duplicated reads with picard
 rule atac_bammkdp:
     input:
-        bam = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.bam"
+        bam = "{OUT_DIR}/Alignment/{name}.sortedByPos.bam"
     output:
-        bam = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.mkdp.bam",
-        metric = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.mkdp.txt",
-        tmp = temp(directory("{OUT_DIR}/Tmp/{fastqid}"))
+        bam = "{OUT_DIR}/Alignment/{name}.sortedByPos.mkdp.bam",
+        metric = "{OUT_DIR}/Alignment/{name}.sortedByPos.mkdp.txt",
+        tmp = temp(directory("{OUT_DIR}/Tmp/{name}"))
     shell:
         "picard MarkDuplicates INPUT={input.bam} OUTPUT={output.bam} METRICS_FILE={output.metric} TMP_DIR={output.tmp};"
         "rm {input.bam}"
@@ -13,9 +13,9 @@ rule atac_bammkdp:
 # generate clean (filtered/deduplicated and chrM-removed and Q30 filtered ) bam file for macs
 rule atac_bamrmdp:
     input:
-        bam = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.mkdp.bam",
+        bam = "{OUT_DIR}/Alignment/{name}.sortedByPos.mkdp.bam",
     output:
-        bam = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.rmdp.clean.bam",
+        bam = "{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.clean.bam",
     params:
         chrombed = config["annotation"]["chromBed"],
     shell:
@@ -24,17 +24,17 @@ rule atac_bamrmdp:
 # macs takes clean bam file to call peaks
 rule atac_callpeak:
     input:
-        bam = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.rmdp.clean.bam" 
+        bam = "{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.clean.bam" 
     output:
-        peak = "{OUT_DIR}/Analysis/{fastqid}_peaks.narrowPeak",
-        bdg = "{OUT_DIR}/Analysis/{fastqid}_treat_pileup.bdg",
-        xls = "{OUT_DIR}/Analysis/{fastqid}_peaks.xls",
+        peak = "{OUT_DIR}/Analysis/{name}_peaks.narrowPeak",
+        bdg = "{OUT_DIR}/Analysis/{name}_treat_pileup.bdg",
+        xls = "{OUT_DIR}/Analysis/{name}_peaks.xls",
     params:
-        name = "{fastqid}",
+        name = "{name}",
     log:
-        "{OUT_DIR}/Log/{fastqid}_macs3_peak.log"
+        "{OUT_DIR}/Log/{name}_macs3_peak.log"
     benchmark:
-        "{OUT_DIR}/Benchmark/{fastqid}_callpeak.benchmark"
+        "{OUT_DIR}/Benchmark/{name}_callpeak.benchmark"
     shell:
         "macs3 callpeak --outdir {OUT_DIR}/Analysis -n {params.name} {macs3_option} -t {input.bam};"
 

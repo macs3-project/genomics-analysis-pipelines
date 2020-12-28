@@ -1,19 +1,19 @@
 rule atac_qcstat:
     input:
-        dirty_bam = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.mkdp.bam",
-        peak = "{OUT_DIR}/Analysis/{fastqid}_peaks.narrowPeak",
+        dirty_bam = "{OUT_DIR}/Alignment/{name}.sortedByPos.mkdp.bam",
+        peak = "{OUT_DIR}/Analysis/{name}_peaks.narrowPeak",
     output:
-        qc_stat = "{OUT_DIR}/QC/{fastqid}.stat.txt",
-        uniq_bam = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.rmdp.unique.bam",
-        uniq_bed = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.rmdp.unique.bed",
-        uniq_clean_bed = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.rmdp.unique.clean.bed",
+        qc_stat = "{OUT_DIR}/QC/{name}.stat.txt",
+        uniq_bam = "{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.unique.bam",
+        uniq_bed = "{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.unique.bed",
+        uniq_clean_bed = "{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.unique.clean.bed",
     params:
         promoter = config["annotation"]["promoter"],
         chrMregion = config["annotation"]["MtBed"],
     threads:
         config["options"]["cores"]
     benchmark:
-        "{OUT_DIR}/Benchmark/{fastqid}_BulkQCStat.benchmark"
+        "{OUT_DIR}/Benchmark/{name}_BulkQCStat.benchmark"
     shell:
         "echo 'flagstat:' > {output.qc_stat};"
         "samtools flagstat --threads {threads} {input.dirty_bam} >> {output.qc_stat};"
@@ -33,10 +33,10 @@ rule atac_qcstat:
 
 rule atac_peakqc:
     input:
-        peak = "{OUT_DIR}/Analysis/{fastqid}_peaks.narrowPeak",
-        peakxls = "{OUT_DIR}/Analysis/{fastqid}_peaks.xls",
+        peak = "{OUT_DIR}/Analysis/{name}_peaks.narrowPeak",
+        peakxls = "{OUT_DIR}/Analysis/{name}_peaks.xls",
     output:
-        peak_qc = "{OUT_DIR}/QC/{fastqid}.peakstat.txt",
+        peak_qc = "{OUT_DIR}/QC/{name}.peakstat.txt",
     params:
         promoter = config["annotation"]["promoter"],
         chrMregion = config["annotation"]["MtBed"],
@@ -45,7 +45,7 @@ rule atac_peakqc:
     threads:
         config["options"]["cores"],
     benchmark:
-        "{OUT_DIR}/Benchmark/{fastqid}_PeakQCStat.benchmark",
+        "{OUT_DIR}/Benchmark/{name}_PeakQCStat.benchmark",
     shell:
         "grep 'total fragments in treatment' {input.peakxls} | perl -pe 's/# //' > {output.peak_qc};"
         "echo 'total number of peaks:' >> {output.peak_qc};"
@@ -63,10 +63,10 @@ rule atac_peakqc:
 
 rule atac_frag:
     input:
-        clean_bam = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.rmdp.clean.bam"
+        clean_bam = "{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.clean.bam"
     output:
-        insertl = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.rmdp.clean.unique.bam.insertl",
-        insertlsum = "{OUT_DIR}/Alignment/{fastqid}.sortedByPos.rmdp.clean.unique.bam.insertl.txt",        
+        insertl = "{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.clean.unique.bam.insertl",
+        insertlsum = "{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.clean.unique.bam.insertl.txt",
     shell:
         "samtools view {input.clean_bam} | cut -f 9 | awk '$1>0{{print}}' > {output.insertl};"
         "perl -e 'while(<>){{chomp;$bin=int($_/10);$count{{$bin}}+=1}}foreach my $key (sort {{$a<=>$b}} keys %count){{print $key*10,\"\\t\",$count{{$key}},\"\\n\"}}' {output.insertl} > {output.insertlsum};"

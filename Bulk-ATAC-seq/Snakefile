@@ -8,28 +8,33 @@ import yaml
 import sys
 import os
 
-# file prefix
-SAMPLE1_FILES = config["sample1fileprefix"]
-SAMPLE2_FILES = config["sample2fileprefix"]
-
 # output directory
 OUT_DIR = config["outprefix"] + "_Result"
+
+# file prefix
+sample1_files = config["sample1fileprefix"]
+sample2_files = config["sample2fileprefix"]
 
 # number of replicates for sample1 and sample2 conditions
 n_sample1 = len( SAMPLE1_FILES )
 n_sample2 = len( SAMPLE2_FILES )
+sample1_names = [ "%s_r%d" % (config["sample1"],x) for x in range( 1, n_sample1 + 1 ) ]
+sample2_names = [ "%s_r%d" % (config["sample2"],x) for x in range( 1, n_sample2 + 1 ) ]
+
+# make a dictionary to match name to actual raw file prefix
+sample_dict_list = zip( sample1_names, sample1_files )
+sample_dict_list.extend( zip( sample2_names, sample2_files ) )
+sample_dict = dict( sample_dict_list )
 
 # individual sample
-SAMPLE1_NAMES = expand("%s_r{i}" % config["sample1"], i = range( 1, n_sample1 + 1 ) )
-SAMPLE2_NAMES = expand("%s_r{i}" % config["sample2"], i = range( 1, n_sample2 + 1 ) )
-PEAKS1   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=SAMPLE1_NAMES)
-PEAKS2   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=SAMPLE2_NAMES)
-SEQSTAT1 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=SAMPLE1_NAMES)
-SEQSTAT2 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=SAMPLE2_NAMES)
-PEAKSTAT1= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=SAMPLE1_NAMES)
-PEAKSTAT2= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=SAMPLE2_NAMES)
-FRAGSTAT1= expand("%s/Alignment/{sample}.sortedByPos.rmdp.clean.unique.bam.insertl.txt" % (OUT_DIR), sample=SAMPLE1_NAMES)
-FRAGSTAT2= expand("%s/Alignment/{sample}.sortedByPos.rmdp.clean.unique.bam.insertl.txt" % (OUT_DIR), sample=SAMPLE2_NAMES)
+PEAKS1   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=sample1_names)
+PEAKS2   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=sample2_names)
+SEQSTAT1 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=sample1_names)
+SEQSTAT2 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=sample2_names)
+PEAKSTAT1= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=sample1_names)
+PEAKSTAT2= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=sample2_names)
+FRAGSTAT1= expand("%s/Alignment/{sample}.sortedByPos.rmdp.clean.unique.bam.insertl.txt" % (OUT_DIR), sample=sample1_names)
+FRAGSTAT2= expand("%s/Alignment/{sample}.sortedByPos.rmdp.clean.unique.bam.insertl.txt" % (OUT_DIR), sample=sample2_names)
 
 TARGET = []
 TARGET.extend(PEAKS1 + PEAKS2 + SEQSTAT1 + SEQSTAT2 + PEAKSTAT1 + PEAKSTAT2 + FRAGSTAT1 + FRAGSTAT2 )
@@ -49,7 +54,7 @@ rule all:
     input: TARGET
 
 # ---- all the following rules are common rules for analyzing a single dataset ---
-
+include: "rules/prepare_rawfile.smk"
 include: "rules/atac_mapping.smk"
 include: "rules/atac_macs.smk"
 #include: "rules/atac_peak_annotating.smk"
