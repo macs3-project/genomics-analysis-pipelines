@@ -16,14 +16,14 @@ sample1_files = config["sample1fileprefix"]
 sample2_files = config["sample2fileprefix"]
 
 # number of replicates for sample1 and sample2 conditions
-n_sample1 = len( SAMPLE1_FILES )
-n_sample2 = len( SAMPLE2_FILES )
+n_sample1 = len( sample1_files )
+n_sample2 = len( sample2_files )
 sample1_names = [ "%s_r%d" % (config["sample1"],x) for x in range( 1, n_sample1 + 1 ) ]
 sample2_names = [ "%s_r%d" % (config["sample2"],x) for x in range( 1, n_sample2 + 1 ) ]
 
 # make a dictionary to match name to actual raw file prefix
-sample_dict_list = zip( sample1_names, sample1_files )
-sample_dict_list.extend( zip( sample2_names, sample2_files ) )
+sample_dict_list = list( zip( sample1_names, sample1_files ) )
+sample_dict_list.extend( list( zip( sample2_names, sample2_files ) ) )
 sample_dict = dict( sample_dict_list )
 
 # individual sample
