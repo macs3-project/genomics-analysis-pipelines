@@ -19,9 +19,11 @@ SEQSTAT1 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=ALL_SAMPLES1)
 SEQSTAT2 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=ALL_SAMPLES2)
 PEAKSTAT1= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=ALL_SAMPLES1)
 PEAKSTAT2= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=ALL_SAMPLES2)
+FRAGSTAT1= expand("%s/Alignment/{sample}.sortedByPos.rmdp.clean.unique.bam.insertl.txt" % (OUT_DIR), sample=ALL_SAMPLES1)
+FRAGSTAT2= expand("%s/Alignment/{sample}.sortedByPos.rmdp.clean.unique.bam.insertl.txt" % (OUT_DIR), sample=ALL_SAMPLES2)
 
 TARGET = []
-TARGET.extend(PEAKS1 + PEAKS2 + SEQSTAT1 + SEQSTAT2 + PEAKSTAT1 + PEAKSTAT2 )
+TARGET.extend(PEAKS1 + PEAKS2 + SEQSTAT1 + SEQSTAT2 + PEAKSTAT1 + PEAKSTAT2 + FRAGSTAT1 + FRAGSTAT2 )
 
 # decide certain parameters based on config.yaml
 mapper = config["options"]["mapper"]
