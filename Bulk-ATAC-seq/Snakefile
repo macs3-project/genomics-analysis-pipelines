@@ -26,6 +26,26 @@ sample_dict_list = list( zip( sample1_names, sample1_files ) )
 sample_dict_list.extend( list( zip( sample2_names, sample2_files ) ) )
 sample_dict = dict( sample_dict_list )
 
+# make links
+if not os.path.exists( OUT_DIR + "/Raw" ):
+    os.mkdir( OUT_DIR + "/Raw" )
+
+for p in sample_dict_list:
+    src = config["fastqdir"] + "/" + p[1]+"_R1.fastq.gz"
+    tgt = OUT_DIR + "/Raw/" + p[0]+"_R1.fastq.gz"
+    if not os.path.exists( tgt ):
+        os.symlink( src, tgt )
+    else:
+        if os.path.realpath(src) != os.path.realpath(tgt):
+            os.remove( tgt )
+    src = config["fastqdir"] + "/" + p[1]+"_R2.fastq.gz"
+    tgt = OUT_DIR + "/Raw/" + p[0]+"_R2.fastq.gz"
+    if not os.path.exists( tgt ):
+        os.symlink( src, tgt )
+    else:
+        if os.path.realpath(src) != os.path.realpath(tgt):
+            os.remove( tgt )
+
 # individual sample
 PEAKS1   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=sample1_names)
 PEAKS2   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=sample2_names)
@@ -54,7 +74,6 @@ rule all:
     input: TARGET
 
 # ---- all the following rules are common rules for analyzing a single dataset ---
-include: "rules/prepare_rawfile.smk"
 include: "rules/atac_mapping.smk"
 include: "rules/atac_macs.smk"
 #include: "rules/atac_peak_annotating.smk"
