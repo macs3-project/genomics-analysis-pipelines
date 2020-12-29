@@ -24,4 +24,4 @@ rule atac_bdg2bw:
     params:
         chromlen = config["annotation"]["chromInfo"],
     shell:
-        "bdg2bw {input.bdg} {params.chromlen};"
+        "utils/bdg2bw {input.bdg} {params.chromlen};"
