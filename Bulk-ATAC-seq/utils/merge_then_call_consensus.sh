@@ -40,6 +40,10 @@ macs3 pileup -i $A -f BEDPE -o $P
 #2 
 macs3 bdgpeakcall -i $P -o $OUTPUT --no-trackline -c $CUTOFF -g $MAXGAP -l $MINLEN
 
+# cleanup
+rm -f $A
+rm -f $P
+
 # end
 echo "All done. Check ${OUTPUT}"
 

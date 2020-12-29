@@ -49,6 +49,8 @@ for p in sample_dict_list:
 # individual sample
 PEAKS1   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=sample1_names)
 PEAKS2   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=sample2_names)
+BIGWIG1   = expand("%s/Analysis/{sample}_treat_pileup.bdg" % (OUT_DIR), sample=sample1_names)
+BIGWIG2   = expand("%s/Analysis/{sample}_treat_pileup.bdg" % (OUT_DIR), sample=sample2_names)
 SEQSTAT1 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=sample1_names)
 SEQSTAT2 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=sample2_names)
 PEAKSTAT1= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=sample1_names)
@@ -61,7 +63,7 @@ FRAGPNG  = "%s/QC/%s.peakstat.png" % (OUT_DIR, config["outprefix"])
 CONSENSUS = "%s/Analysis/%s.consensus.bed" % (OUT_DIR, config["outprefix"])
 
 TARGET = []
-TARGET.extend(PEAKS1 + PEAKS2 + SEQSTAT1 + SEQSTAT2 + PEAKSTAT1 + PEAKSTAT2 + [FRAGPNG, CONSENSUS] )
+TARGET.extend(PEAKS1 + PEAKS2 + BIGWIG1 + BIGWIG2 + SEQSTAT1 + SEQSTAT2 + PEAKSTAT1 + PEAKSTAT2 + [FRAGPNG, CONSENSUS] )
 
 # decide certain parameters based on config.yaml
 mapper = config["options"]["mapper"]

@@ -10,3 +10,5 @@ rule atac_consensus:
     shell:
         "utils/merge_then_call_consensus.sh {output.consensus} {params.cutoff} {input.peaks1} {input.peaks2}; "
 
+
+# generate counts
