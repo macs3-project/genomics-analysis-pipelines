@@ -84,6 +84,6 @@ include: "rules/atac_qc.smk"
 
 # ---- integrative analysis of all samples ---
 
-#include: "rules/atac_dar.smk"
+include: "rules/atac_dar.smk"
 #include: "rules/atac_dar_annotating.smk"
 

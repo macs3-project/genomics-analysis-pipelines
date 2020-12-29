@@ -16,11 +16,11 @@
 # ------------------------------------------------------------------
 
 if [ $# -lt 2 ];then
-    echo "Need at least 3 parameters! <consensus prefix> <cutoff> <all the peak files in BED format>"
+    echo "Need at least 3 parameters! <consensus file in BED format> <cutoff> <all the peak files in BED format>"
     exit
 fi
 
-OUTPUT_PREFIX=$1
+OUTPUT=$1
 CUTOFF=$2
 SAMPLE_PEAKS=${@:3}
 
@@ -30,22 +30,16 @@ MINLEN=200
 MAXGAP=30
 
 # ------------------------------------------------------------------
+A=${OUTPUT}.tmp.merged
+P=${OUTPUT}.tmp.pileup
 
-# 1 pileup 
-A=${OUTPUT_PREFIX}.all.bed
-P=${OUTPUT_PREFIX}.pileup.bdg
-
-rm -f $A $P
-touch $A $P
-
+# 1 pileup
 cat $SAMPLE_PEAKS | cut -f 1,2,3 > $A
 macs3 pileup -i $A -f BEDPE -o $P
 
 #2 
-O=${OUTPUT_PREFIX}.consensus.bed
-
-macs3 bdgpeakcall -i $P -o $O --no-trackline -c $CUTOFF -g $MAXGAP -l $MINLEN
+macs3 bdgpeakcall -i $P -o $OUTPUT --no-trackline -c $CUTOFF -g $MAXGAP -l $MINLEN
 
 # end
-echo "All done. Check ${O}"
+echo "All done. Check ${OUTPUT}"
 
