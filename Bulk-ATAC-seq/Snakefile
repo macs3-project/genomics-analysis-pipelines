@@ -64,9 +64,10 @@ BINCOUNT2 = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=sampl
 FRAGPNG  = "%s/QC/%s.peakstat.png" % (OUT_DIR, config["outprefix"])
 CONSENSUS = "%s/Analysis/%s.consensus.bed" % (OUT_DIR, config["outprefix"])
 BINCONSENSUS = "%s/Analysis/%s.binconsensus.bed" % (OUT_DIR, config["outprefix"])
+BINCOUNTTABLE = "%s/Analysis/%s.bincount.table" % (OUT_DIR, config["outprefix"])
 
 TARGET = []
-TARGET.extend(PEAKS1 + PEAKS2 + BIGWIG1 + BIGWIG2 + BINCOUNT1 + BINCOUNT2 + SEQSTAT1 + SEQSTAT2 + PEAKSTAT1 + PEAKSTAT2 + [FRAGPNG, CONSENSUS] )
+TARGET.extend(PEAKS1 + PEAKS2 + BIGWIG1 + BIGWIG2 + SEQSTAT1 + SEQSTAT2 + PEAKSTAT1 + PEAKSTAT2 + [FRAGPNG, CONSENSUS, BINCOUNTTABLE] )
 
 # decide certain parameters based on config.yaml
 mapper = config["options"]["mapper"]

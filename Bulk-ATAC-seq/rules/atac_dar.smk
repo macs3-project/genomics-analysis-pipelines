@@ -34,3 +34,15 @@ rule atac_bincount:
         "echo -e \"bin_id\t{wildcards.sample}\" > {output.bincount};"
         "cut -f 1,6 {output.bincount}.tmp >> {output.bincount}; "
         "rm -f {output.bincount}.tmp; "
+
+# make the big table
+rule atac_bincounttable:
+    input:
+        binconsensus = BINCONSENSUS,
+        bincount1 = BINCOUNT1,
+        bincount2 = BINCOUNT2,
+    output:
+        bincounttable = BINCOUNTTABLE,
+    shell:
+        "perl -ane 'print \"$F[3]\\t$F[0]:$F[1]-$F[2]\\n\"' {input.binconsensus} > {output.bincounttable}; "
+        "for f in {input.bincount1};do cut -f 2 $f >> {output.bincounttable}; done; "
