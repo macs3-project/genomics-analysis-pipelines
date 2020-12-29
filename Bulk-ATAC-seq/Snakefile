@@ -57,9 +57,8 @@ PEAKSTAT1= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=sample1_name
 PEAKSTAT2= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=sample2_names)
 FRAGSTAT1= expand("%s/Alignment/{sample}.sortedByPos.rmdp.clean.unique.bam.insertl.txt" % (OUT_DIR), sample=sample1_names)
 FRAGSTAT2= expand("%s/Alignment/{sample}.sortedByPos.rmdp.clean.unique.bam.insertl.txt" % (OUT_DIR), sample=sample2_names)
-
-BINCOUNT1 = expand("%s/Analysis/{sample}_treat_pileup.bincount.txt" % (OUT_DIR), sample=sample1_names)
-BINCOUNT2 = expand("%s/Analysis/{sample}_treat_pileup.bincount.txt" % (OUT_DIR), sample=sample2_names)
+BINCOUNT1 = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=sample1_names)
+BINCOUNT2 = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=sample2_names)
 
 # combined files
 FRAGPNG  = "%s/QC/%s.peakstat.png" % (OUT_DIR, config["outprefix"])

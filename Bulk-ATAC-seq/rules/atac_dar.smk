@@ -26,8 +26,11 @@ rule atac_binconsensus:
 rule atac_bincount:
     input:
         binconsensus = BINCONSENSUS,
-        bigwig = "{OUT_DIR}/Analysis/{bdgname}.bw",
+        bigwig = "{OUT_DIR}/Analysis/{sample}_treat_pileup.bw",
     output:
-        bincount = "{OUT_DIR}/Analysis/{bdgname}.bincount.txt",
+        bincount = "{OUT_DIR}/Analysis/{sample}.bincount.txt",
     shell:
-        "bigWigAverageOverBed {input.bigwig} {input.binconsensus} {output.bincount}; "
+        "bigWigAverageOverBed {input.bigwig} {input.binconsensus} {output.bincount}.tmp; "
+        "echo -e \"bin_id\t{sample}\" > {output.bincount};"
+        "cut -f 1,6 {output.bincount}.tmp >> {output.bincount}; "
+        "rm -f {output.bincount}.tmp; "
