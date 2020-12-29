@@ -58,12 +58,16 @@ PEAKSTAT2= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=sample2_name
 FRAGSTAT1= expand("%s/Alignment/{sample}.sortedByPos.rmdp.clean.unique.bam.insertl.txt" % (OUT_DIR), sample=sample1_names)
 FRAGSTAT2= expand("%s/Alignment/{sample}.sortedByPos.rmdp.clean.unique.bam.insertl.txt" % (OUT_DIR), sample=sample2_names)
 
+BINCOUNT1 = expand("%s/Analysis/{sample}_treat_pileup.bincount.txt" % (OUT_DIR), sample=sample1_names)
+BINCOUNT2 = expand("%s/Analysis/{sample}_treat_pileup.bincount.txt" % (OUT_DIR), sample=sample2_names)
+
 # combined files
 FRAGPNG  = "%s/QC/%s.peakstat.png" % (OUT_DIR, config["outprefix"])
 CONSENSUS = "%s/Analysis/%s.consensus.bed" % (OUT_DIR, config["outprefix"])
+BINCONSENSUS = "%s/Analysis/%s.binconsensus.bed" % (OUT_DIR, config["outprefix")]
 
 TARGET = []
-TARGET.extend(PEAKS1 + PEAKS2 + BIGWIG1 + BIGWIG2 + SEQSTAT1 + SEQSTAT2 + PEAKSTAT1 + PEAKSTAT2 + [FRAGPNG, CONSENSUS] )
+TARGET.extend(PEAKS1 + PEAKS2 + BIGWIG1 + BIGWIG2 + BINCOUNT1 + BINCOUNT2 + SEQSTAT1 + SEQSTAT2 + PEAKSTAT1 + PEAKSTAT2 + [FRAGPNG, CONSENSUS] )
 
 # decide certain parameters based on config.yaml
 mapper = config["options"]["mapper"]
