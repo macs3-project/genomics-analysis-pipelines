@@ -75,6 +75,7 @@ rule all:
 
 # ---- all the following rules are common rules for analyzing a single dataset ---
 include: "rules/atac_mapping.smk"
+include: "rules/atac_cleanbam.smk"
 include: "rules/atac_macs.smk"
 #include: "rules/atac_peak_annotating.smk"
 include: "rules/atac_qc.smk"

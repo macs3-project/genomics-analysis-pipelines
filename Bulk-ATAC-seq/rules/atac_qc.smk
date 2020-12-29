@@ -4,9 +4,9 @@ rule atac_qcstat:
         peak = "{OUT_DIR}/Analysis/{name}_peaks.narrowPeak",
     output:
         qc_stat = "{OUT_DIR}/QC/{name}.stat.txt",
-        uniq_bam = "{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.unique.bam",
-        uniq_bed = "{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.unique.bed",
-        uniq_clean_bed = "{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.unique.clean.bed",
+        uniq_bam = temp("{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.unique.bam"),
+        uniq_bed = temp("{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.unique.bed"),
+        uniq_clean_bed = temp("{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.unique.clean.bed"),
     params:
         promoter = config["annotation"]["promoter"],
         chrMregion = config["annotation"]["MtBed"],
@@ -65,7 +65,7 @@ rule atac_frag:
     input:
         clean_bam = "{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.clean.bam"
     output:
-        insertl = "{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.clean.unique.bam.insertl",
+        insertl = temp("{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.clean.unique.bam.insertl"),
         insertlsum = "{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.clean.unique.bam.insertl.txt",
     shell:
         "samtools view {input.clean_bam} | cut -f 9 | awk '$1>0{{print}}' > {output.insertl};"
