@@ -54,5 +54,5 @@ for ( f in c2_files ) {
 }
 
 p <- ggplot(data=all_data, aes(x=fraglen, y=count, color=sample))
-p <- p + geom_line() + facet_grid(rows = vars(group))
-ggsave(output_fig, p, height=8, width=8)
+p <- p + geom_line() + facet_grid(cols = vars(group))
+ggsave(output_fig, p, height=4, width=10)

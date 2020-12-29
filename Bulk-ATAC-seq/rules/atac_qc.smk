@@ -70,3 +70,4 @@ rule atac_frag:
     shell:
         "samtools view {input.clean_bam} | cut -f 9 | awk '$1>0{{print}}' > {output.insertl};"
         "perl -e 'while(<>){{chomp;$bin=int($_/10);$count{{$bin}}+=1}}foreach my $key (sort {{$a<=>$b}} keys %count){{print $key*10,\"\\t\",$count{{$key}},\"\\n\"}}' {output.insertl} > {output.insertlsum};"
+
