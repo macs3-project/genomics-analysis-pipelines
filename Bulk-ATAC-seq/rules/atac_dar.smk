@@ -20,7 +20,7 @@ rule atac_binconsensus:
     params:
         binsize = 100,
     shell:
-        "awk -v W={params.binsize} -v OFS=\"\\t\" '{{print $1, int($2/W)*W, (int($3/W)+1)*W}}' {input.consensus} | bedtools sort -i - | bedtools merge -i - | bedtools makewindows -w {params.binsize} -b - -i srcwinnum > {output.binconsensus}; "
+        "awk -v W={params.binsize} -v OFS=\"\\t\" '{{print $1, int($2/W)*W, (int($3/W)+1)*W, $4}}' {input.consensus} | bedtools sort -i - | bedtools merge -i - | bedtools makewindows -w {params.binsize} -b - -i srcwinnum > {output.binconsensus}; "
 
 # generate counts for each bigwig
 rule atac_bincount:
