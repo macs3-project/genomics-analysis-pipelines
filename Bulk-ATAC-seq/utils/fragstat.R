@@ -1,7 +1,6 @@
 #!/usr/bin/env Rscript
 
 library(ggplot2)
-library(ggpubr)
 library(optparse)
 
 option_list = list(

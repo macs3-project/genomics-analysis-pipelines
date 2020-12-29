@@ -71,3 +71,16 @@ rule atac_frag:
         "samtools view {input.clean_bam} | cut -f 9 | awk '$1>0{{print}}' > {output.insertl};"
         "perl -e 'while(<>){{chomp;$bin=int($_/10);$count{{$bin}}+=1}}foreach my $key (sort {{$a<=>$b}} keys %count){{print $key*10,\"\\t\",$count{{$key}},\"\\n\"}}' {output.insertl} > {output.insertlsum};"
 
+rule atac_plotfrag:
+    input:
+        fragstat1 = FRAGSTAT1,
+        fragstat2 = FRAGSTAT2,
+    output:
+        png = FRAGPNG,
+    params:
+        fragstat1param = ",".join(FRAGSTAT1),
+        fragstat2param = ",".join(FRAGSTAT2),
+        s1name = config["sample1"],
+        s2name = config["sample2"],
+    shell:
+        "utils/fragstat.R -a {params.fragstat1param} -b {params.fragstat2param} -i {params.s1name} -j {params.s2name} -o {output.png};"
