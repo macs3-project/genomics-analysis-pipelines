@@ -47,4 +47,5 @@ rule atac_bincounttable:
         "echo -e \"bin_id\\tpos\" > {output.bincounttable}; "
         "perl -ane 'print \"$F[3]\\t$F[0]:$F[1]-$F[2]\\n\"' {input.binconsensus} >> {output.bincounttable}; "
         "for f in {input.bincount1};do cut -f 2 $f | paste -d\"\\t\" {output.bincounttable} - > {output.bincounttable}.tmp; mv {output.bincounttable}.tmp {output.bincounttable}; done; "
+        "for f in {input.bincount2};do cut -f 2 $f | paste -d\"\\t\" {output.bincounttable} - > {output.bincounttable}.tmp; mv {output.bincounttable}.tmp {output.bincounttable}; done; "        
         "rm -f {output.bincounttable}.tmp; "
