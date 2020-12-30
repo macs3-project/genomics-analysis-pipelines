@@ -76,7 +76,7 @@ macs3_cutoff_option = " -p " if config["options"]["peakcalling_cutoff_method"] =
 macs3_cutoff_option += str(config["options"]["peakcalling_cutoff"])
 macs3_format_option = " -f BAMPE " if config["options"]["peakcalling_PE_mode"] == "Y" else " -f BAM "
 macs3_lambda_option = " --nolambda " if config["options"]["peakcalling_disable_lambda"] == "Y" else " "
-macs3_option = f"--keep-dup all -B --SPMR {macs3_genome_option} {macs3_cutoff_option} {macs3_lambda_option} {macs3_format_option}"
+macs3_option = f"--keep-dup all -B {macs3_genome_option} {macs3_cutoff_option} {macs3_lambda_option} {macs3_format_option}"
 
 # one line to rule all
 
