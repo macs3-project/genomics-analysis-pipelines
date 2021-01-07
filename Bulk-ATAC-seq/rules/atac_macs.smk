@@ -13,7 +13,26 @@ rule atac_callpeak:
     benchmark:
         "{OUT_DIR}/Benchmark/{name}_callpeak.benchmark"
     shell:
-        "macs3 callpeak --outdir {OUT_DIR}/Analysis -n {params.name} {macs3_option} -t {input.bam};"
+        "macs3 callpeak --outdir {OUT_DIR}/Analysis -n {params.name} {macs3_callpeak_option} -t {input.bam};"
+
+# macs3 pileup command for generating pileup signals for DAR analysis
+rule atac_pileup:
+    input:
+        bam = "{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.clean.bam" 
+    output:
+        bdg_raw = "{OUT_DIR}/Analysis/{name}_raw.bdg",
+	bdg_spmr = "{OUT_DIR}/Analysis/{name}_spmr.bdg",
+    params:
+        name = "{name}",
+    log:
+        "{OUT_DIR}/Log/{name}_macs3_pileup.log"
+    benchmark:
+        "{OUT_DIR}/Benchmark/{name}_callpeak.benchmark"
+    shell:
+        "macs3 callpeak --outdir {OUT_DIR}/Analysis -n {name} {macs3_callpeak_option} -t {input.bam}; "
+	"mv {OUT_DIR}/Analysis/{name}_treat_pileup.bdg {output.bdg_spmr}; "
+	"macs3 pileup {macs3_pileup_option} -i {input.bam} -o {output.bdg_raw}; "
+
 
 # bdg2bw converts bedGraph to bigWig files
 rule atac_bdg2bw:
@@ -25,3 +44,4 @@ rule atac_bdg2bw:
         chromlen = config["annotation"]["chromInfo"],
     shell:
         "utils/bdg2bw {input.bdg} {params.chromlen};"
+

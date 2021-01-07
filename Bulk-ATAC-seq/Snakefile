@@ -49,8 +49,10 @@ for p in sample_dict_list:
 # individual sample
 PEAKS1   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=sample1_names)
 PEAKS2   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=sample2_names)
-BIGWIG1   = expand("%s/Analysis/{sample}_treat_pileup.bw" % (OUT_DIR), sample=sample1_names)
-BIGWIG2   = expand("%s/Analysis/{sample}_treat_pileup.bw" % (OUT_DIR), sample=sample2_names)
+BIGWIG_RAW1   = expand("%s/Analysis/{sample}_raw.bw" % (OUT_DIR), sample=sample1_names)
+BIGWIG_RAW2   = expand("%s/Analysis/{sample}_raw.bw" % (OUT_DIR), sample=sample2_names)
+BIGWIG_SPMR1   = expand("%s/Analysis/{sample}_spmr.bw" % (OUT_DIR), sample=sample1_names)
+BIGWIG_SPMR2   = expand("%s/Analysis/{sample}_spmr.bw" % (OUT_DIR), sample=sample2_names)
 SEQSTAT1 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=sample1_names)
 SEQSTAT2 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=sample2_names)
 PEAKSTAT1= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=sample1_names)
@@ -67,7 +69,7 @@ BINCONSENSUS = "%s/Analysis/%s.binconsensus.bed" % (OUT_DIR, config["outprefix"]
 BINCOUNTTABLE = "%s/Analysis/%s.bincount.table" % (OUT_DIR, config["outprefix"])
 
 TARGET = []
-TARGET.extend(PEAKS1 + PEAKS2 + BIGWIG1 + BIGWIG2 + SEQSTAT1 + SEQSTAT2 + PEAKSTAT1 + PEAKSTAT2 + [FRAGPNG, CONSENSUS, BINCOUNTTABLE] )
+TARGET.extend(PEAKS1 + PEAKS2 + BIGWIG_RAW1 + BIGWIG_RAW2 + BIGWIG_SPMR1 + BIGWIG_SPMR2 + SEQSTAT1 + SEQSTAT2 + PEAKSTAT1 + PEAKSTAT2 + [FRAGPNG, CONSENSUS, BINCOUNTTABLE] )
 
 # decide certain parameters based on config.yaml
 mapper = config["options"]["mapper"]
@@ -76,7 +78,8 @@ macs3_cutoff_option = " -p " if config["options"]["peakcalling_cutoff_method"] =
 macs3_cutoff_option += str(config["options"]["peakcalling_cutoff"])
 macs3_format_option = " -f BAMPE " if config["options"]["peakcalling_PE_mode"] == "Y" else " -f BAM "
 macs3_lambda_option = " --nolambda " if config["options"]["peakcalling_disable_lambda"] == "Y" else " "
-macs3_option = f"--keep-dup all -B {macs3_genome_option} {macs3_cutoff_option} {macs3_lambda_option} {macs3_format_option}"
+macs3_callpeak_option = f"--keep-dup all -B --SPMR {macs3_genome_option} {macs3_cutoff_option} {macs3_lambda_option} {macs3_format_option}"
+macs3_pileup_option = f" {macs3_format_option} "
 
 # one line to rule all
 

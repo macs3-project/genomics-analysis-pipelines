@@ -84,3 +84,14 @@ rule atac_plotfrag:
         s2name = config["sample2"],
     shell:
         "utils/fragstat.R -a {params.fragstat1param} -b {params.fragstat2param} -i {params.s1name} -j {params.s2name} -o {output.png};"
+
+#rule atac_profile_gss:
+#    input:
+#        peak   = "{OUT_DIR}/Analysis/{name}_peaks.narrowPeak",
+#        bigwig = "{OUT_DIR}/Analysis/{name}_spmr.bw",
+#    output:
+#        fig = "{OUT_DIR}/QC/{name}_profile_gss.png",
+#    params:
+#        gtf = config["annotation"]["geneGTF"],
+#    shell:
+#        "awk '$3==\"gene\"{{print}}' {params.gtf} | perl -ne 'chomp;@F=split(/\\t/);$s=$F[8];$s=~s/^gene_id\\ \\\"\(\\S+\)\\\".*/$1/;print $F[0],$s,\"\\n\"'"

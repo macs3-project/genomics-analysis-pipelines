@@ -26,7 +26,7 @@ rule atac_binconsensus:
 rule atac_bincount:
     input:
         binconsensus = BINCONSENSUS,
-        bigwig = "{OUT_DIR}/Analysis/{sample}_treat_pileup.bw",
+        bigwig = "{OUT_DIR}/Analysis/{sample}_raw.bw",
     output:
         bincount = "{OUT_DIR}/Analysis/{sample}.bincount.txt",
     shell:
