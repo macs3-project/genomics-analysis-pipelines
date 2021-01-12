@@ -73,13 +73,13 @@ rule atac_frag:
 
 rule atac_plotfrag:
     input:
-        fragstat1 = FRAGSTAT1,
-        fragstat2 = FRAGSTAT2,
+        fragstat1 = FRAG_STAT1,
+        fragstat2 = FRAG_STAT2,
     output:
-        png = FRAGPNG,
+        png = FRAG_PNG,
     params:
-        fragstat1param = ",".join(FRAGSTAT1),
-        fragstat2param = ",".join(FRAGSTAT2),
+        fragstat1param = ",".join(FRAG_STAT1),
+        fragstat2param = ",".join(FRAG_STAT2),
         s1name = config["sample1"],
         s2name = config["sample2"],
     shell:

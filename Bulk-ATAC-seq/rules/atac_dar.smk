@@ -16,7 +16,7 @@ rule atac_binconsensus:
     input:
         consensus = CONSENSUS,
     output:
-        binconsensus = BINCONSENSUS,
+        binconsensus = BIN_CONSENSUS,
     params:
         binsize = 100,
     shell:
@@ -25,7 +25,7 @@ rule atac_binconsensus:
 # generate counts for each bigwig
 rule atac_bincount:
     input:
-        binconsensus = BINCONSENSUS,
+        binconsensus = BIN_CONSENSUS,
         bigwig = "{OUT_DIR}/Analysis/{sample}_raw.bw",
     output:
         bincount = "{OUT_DIR}/Analysis/{sample}.bincount.txt",
@@ -38,14 +38,23 @@ rule atac_bincount:
 # make the big table
 rule atac_bincounttable:
     input:
-        binconsensus = BINCONSENSUS,
-        bincount1 = BINCOUNT1,
-        bincount2 = BINCOUNT2,
+        binconsensus = BIN_CONSENSUS,
+        bincount1 = BIN_COUNT1,
+        bincount2 = BIN_COUNT2,
     output:
-        bincounttable = BINCOUNTTABLE,
+        bincounttable = BIN_COUNT_TABLE,
     shell:
         "echo -e \"bin_id\\tpos\" > {output.bincounttable}; "
-        "perl -ane 'print \"$F[3]\\t$F[0]:$F[1]-$F[2]\\n\"' {input.binconsensus} >> {output.bincounttable}; "
-        "for f in {input.bincount1};do cut -f 2 $f | paste -d\"\\t\" {output.bincounttable} - > {output.bincounttable}.tmp; mv {output.bincounttable}.tmp {output.bincounttable}; done; "
-        "for f in {input.bincount2};do cut -f 2 $f | paste -d\"\\t\" {output.bincounttable} - > {output.bincounttable}.tmp; mv {output.bincounttable}.tmp {output.bincounttable}; done; "        
+        "sort -k4,4 {input.binconsensus} | perl -ane 'print \"$F[3]\\t$F[0]:$F[1]-$F[2]\\n\"' - >> {output.bincounttable}; "
+        "for f in {input.bincount1};do sort -k1,1 $f | cut -f 2 - | paste -d\"\\t\" {output.bincounttable} - > {output.bincounttable}.tmp; mv {output.bincounttable}.tmp {output.bincounttable}; done; "
+        "for f in {input.bincount2};do sort -k1,1 $f | cut -f 2 - | paste -d\"\\t\" {output.bincounttable} - > {output.bincounttable}.tmp; mv {output.bincounttable}.tmp {output.bincounttable}; done; "
         "rm -f {output.bincounttable}.tmp; "
+
+# run DAR R script
+rule atac_dar:
+    input:
+        bincounttable = BIN_COUNT_TABLE,
+    output:
+        dar_html = DAR_HTML,
+    shell:
+        "Rscript -e \"knitr::stitch_rmd(\'pipelineDescriptive.Rmd\')\"; "

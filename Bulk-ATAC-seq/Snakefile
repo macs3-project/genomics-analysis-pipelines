@@ -53,23 +53,23 @@ BIGWIG_RAW1   = expand("%s/Analysis/{sample}_raw.bw" % (OUT_DIR), sample=sample1
 BIGWIG_RAW2   = expand("%s/Analysis/{sample}_raw.bw" % (OUT_DIR), sample=sample2_names)
 BIGWIG_SPMR1   = expand("%s/Analysis/{sample}_spmr.bw" % (OUT_DIR), sample=sample1_names)
 BIGWIG_SPMR2   = expand("%s/Analysis/{sample}_spmr.bw" % (OUT_DIR), sample=sample2_names)
-SEQSTAT1 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=sample1_names)
-SEQSTAT2 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=sample2_names)
-PEAKSTAT1= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=sample1_names)
-PEAKSTAT2= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=sample2_names)
-FRAGSTAT1= expand("%s/Alignment/{sample}.sortedByPos.rmdp.clean.unique.bam.insertl.txt" % (OUT_DIR), sample=sample1_names)
-FRAGSTAT2= expand("%s/Alignment/{sample}.sortedByPos.rmdp.clean.unique.bam.insertl.txt" % (OUT_DIR), sample=sample2_names)
-BINCOUNT1 = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=sample1_names)
-BINCOUNT2 = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=sample2_names)
+SEQ_STAT1 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=sample1_names)
+SEQ_STAT2 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=sample2_names)
+PEAK_STAT1= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=sample1_names)
+PEAK_STAT2= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=sample2_names)
+FRAG_STAT1= expand("%s/Alignment/{sample}.sortedByPos.rmdp.clean.unique.bam.insertl.txt" % (OUT_DIR), sample=sample1_names)
+FRAG_STAT2= expand("%s/Alignment/{sample}.sortedByPos.rmdp.clean.unique.bam.insertl.txt" % (OUT_DIR), sample=sample2_names)
+BIN_COUNT1 = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=sample1_names)
+BIN_COUNT2 = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=sample2_names)
 
 # combined files
-FRAGPNG  = "%s/QC/%s.peakstat.png" % (OUT_DIR, config["outprefix"])
+FRAG_PNG  = "%s/QC/%s.peakstat.png" % (OUT_DIR, config["outprefix"])
 CONSENSUS = "%s/Analysis/%s.consensus.bed" % (OUT_DIR, config["outprefix"])
-BINCONSENSUS = "%s/Analysis/%s.binconsensus.bed" % (OUT_DIR, config["outprefix"])
-BINCOUNTTABLE = "%s/Analysis/%s.bincount.table" % (OUT_DIR, config["outprefix"])
+BIN_CONSENSUS = "%s/Analysis/%s.binconsensus.bed" % (OUT_DIR, config["outprefix"])
+BIN_COUNTTABLE = "%s/Analysis/%s.bincount.table" % (OUT_DIR, config["outprefix"])
 
 TARGET = []
-TARGET.extend(PEAKS1 + PEAKS2 + BIGWIG_RAW1 + BIGWIG_RAW2 + BIGWIG_SPMR1 + BIGWIG_SPMR2 + SEQSTAT1 + SEQSTAT2 + PEAKSTAT1 + PEAKSTAT2 + [FRAGPNG, CONSENSUS, BINCOUNTTABLE] )
+TARGET.extend(PEAKS1 + PEAKS2 + BIGWIG_RAW1 + BIGWIG_RAW2 + BIGWIG_SPMR1 + BIGWIG_SPMR2 + SEQ_STAT1 + SEQ_STAT2 + PEAK_STAT1 + PEAK_STAT2 + [FRAG_PNG, CONSENSUS, BIN_COUNTTABLE] )
 
 # decide certain parameters based on config.yaml
 mapper = config["options"]["mapper"]
