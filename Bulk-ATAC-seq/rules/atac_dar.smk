@@ -51,10 +51,10 @@ rule atac_bincounttable:
         "rm -f {output.bincounttable}.tmp; "
 
 # run DAR R script
-rule atac_dar:
-    input:
-        bincounttable = BIN_COUNT_TABLE,
-    output:
-        dar_html = DAR_HTML,
-    shell:
-        "Rscript -e \"knitr::stitch_rmd(\'pipelineDescriptive.Rmd\')\"; "
+#rule atac_dar:
+#    input:
+#        bincounttable = BIN_COUNT_TABLE,
+#    output:
+#        dar_html = DAR_HTML,
+#    shell:
+#        "Rscript -e \"knitr::stitch_rmd(\'pipelineDescriptive.Rmd\')\"; "
