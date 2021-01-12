@@ -69,7 +69,7 @@ BIN_CONSENSUS = "%s/Analysis/%s.binconsensus.bed" % (OUT_DIR, config["outprefix"
 BIN_COUNT_TABLE = "%s/Analysis/%s.bincount.table" % (OUT_DIR, config["outprefix"])
 
 TARGET = []
-TARGET.extend(PEAKS1 + PEAKS2 + BIGWIG_RAW1 + BIGWIG_RAW2 + BIGWIG_SPMR1 + BIGWIG_SPMR2 + SEQ_STAT1 + SEQ_STAT2 + PEAK_STAT1 + PEAK_STAT2 + [FRAG_PNG, CONSENSUS, BIN_COUNTTABLE] )
+TARGET.extend(PEAKS1 + PEAKS2 + BIGWIG_RAW1 + BIGWIG_RAW2 + BIGWIG_SPMR1 + BIGWIG_SPMR2 + SEQ_STAT1 + SEQ_STAT2 + PEAK_STAT1 + PEAK_STAT2 + [FRAG_PNG, CONSENSUS, BIN_COUNT_TABLE] )
 
 # decide certain parameters based on config.yaml
 mapper = config["options"]["mapper"]
