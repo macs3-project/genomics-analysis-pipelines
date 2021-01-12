@@ -66,7 +66,7 @@ BIN_COUNT2 = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=samp
 FRAG_PNG  = "%s/QC/%s.peakstat.png" % (OUT_DIR, config["outprefix"])
 CONSENSUS = "%s/Analysis/%s.consensus.bed" % (OUT_DIR, config["outprefix"])
 BIN_CONSENSUS = "%s/Analysis/%s.binconsensus.bed" % (OUT_DIR, config["outprefix"])
-BIN_COUNTTABLE = "%s/Analysis/%s.bincount.table" % (OUT_DIR, config["outprefix"])
+BIN_COUNT_TABLE = "%s/Analysis/%s.bincount.table" % (OUT_DIR, config["outprefix"])
 
 TARGET = []
 TARGET.extend(PEAKS1 + PEAKS2 + BIGWIG_RAW1 + BIGWIG_RAW2 + BIGWIG_SPMR1 + BIGWIG_SPMR2 + SEQ_STAT1 + SEQ_STAT2 + PEAK_STAT1 + PEAK_STAT2 + [FRAG_PNG, CONSENSUS, BIN_COUNTTABLE] )
