@@ -44,11 +44,12 @@ rule atac_bincounttable:
     output:
         bincounttable = BIN_COUNT_TABLE,
     shell:
-        "echo -e \"bin_id\\tpos\" > {output.bincounttable}; "
-        "sort -k4,4 {input.binconsensus} | perl -ane 'print \"$F[3]\\t$F[0]:$F[1]-$F[2]\\n\"' - >> {output.bincounttable}; "
+        "echo -e \"bin_id\\tchr\\tstart\\tend\\tpos\" > {output.bincounttable}; "
+        "sort -k4,4 {input.binconsensus} | perl -ane 'print \"$F[3]\\t$F[0]\\t$F[1]\\t$F[2]\\t$F[0]:$F[1]-$F[2]\\n\"' - >> {output.bincounttable}; "
         "for f in {input.bincount1};do sort -k1,1 $f | cut -f 2 - | paste -d\"\\t\" {output.bincounttable} - > {output.bincounttable}.tmp; mv {output.bincounttable}.tmp {output.bincounttable}; done; "
         "for f in {input.bincount2};do sort -k1,1 $f | cut -f 2 - | paste -d\"\\t\" {output.bincounttable} - > {output.bincounttable}.tmp; mv {output.bincounttable}.tmp {output.bincounttable}; done; "
-        "rm -f {output.bincounttable}.tmp; "
+        "sort -k2,2 -k3,3n {output.bincounttable} > {output.bincounttable}.tmp; "
+	"mv {output.bincounttable}.tmp {output.bincounttable}; "
 
 # run DAR R script
 #rule atac_dar:
