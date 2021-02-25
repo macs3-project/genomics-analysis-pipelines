@@ -85,6 +85,28 @@ rule atac_plotfrag:
     shell:
         "utils/fragstat.R -a {params.fragstat1param} -b {params.fragstat2param} -i {params.s1name} -j {params.s2name} -o {output.png};"
 
+rule atac_sum_qcstat:
+    input:
+        qcstat1 = SEQ_STAT1,
+        qcstat2 = SEQ_STAT2,
+    output:
+        seqqcsummary = SEQ_QC_SUMMARY,
+    params:
+        filelist = " ".join(SEQ_STAT1 + SEQ_STAT2)
+    shell:
+        "utils/atac_seqqc_summary.py {params.filelist} > {output.seqqcsummary};"
+
+rule atac_sum_peakstat:
+    input:
+        peakstat1 = PEAK_STAT1,
+        peakstat2 = PEAK_STAT2,
+    output:
+        peakqcsummary = PEAK_QC_SUMMARY,
+    params:
+        filelist = " ".join(PEAK_STAT1 + PEAK_STAT2)
+    shell:
+        "utils/atac_peakqc_summary.py {params.filelist} > {output.peakqcsummary};"
+        
 #rule atac_profile_gss:
 #    input:
 #        peak   = "{OUT_DIR}/Analysis/{name}_peaks.narrowPeak",
