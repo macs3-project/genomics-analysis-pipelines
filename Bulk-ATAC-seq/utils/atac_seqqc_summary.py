@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2021-02-25 17:11:20 Tao Liu>
+# Time-stamp: <2021-02-25 17:16:42 Tao Liu>
 
 import os
 import sys
@@ -14,7 +14,7 @@ def main():
 
     files = sys.argv[1:]
 
-    print( "sample_name\treplicate\ttotal_reads\tmapped_reads\tratio_of_total\tmapped_properly_paired_reads\tratio_of_total\tduplicated_reads\tratio_of_total\tunique_Q30_non-chrM_reads\tratio_of_total\tunique_Q30_non-chrM_in_promoter\tratio_of_valid_reads\tunique_Q30_non-chrM_in_peaks\tratio_of_valid_reads" )
+    print( "sample_name\treplicate\ttotal_reads\tmapped_reads\tratio_of_total\tduplicated_reads\tratio_of_total\tunique_Q30_non-chrM_reads\tratio_of_total\tunique_Q30_non-chrM_in_promoter\tratio_of_valid_reads\tunique_Q30_non-chrM_in_peaks\tratio_of_valid_reads" )
     
     for filename in files:
         total_reads = -1
