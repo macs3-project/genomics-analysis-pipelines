@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2021-02-25 16:56:47 Tao Liu>
+# Time-stamp: <2021-02-25 17:11:20 Tao Liu>
 
 import os
 import sys
@@ -24,7 +24,7 @@ def main():
         unique_non_chrM_promoter = -1
         unique_non_chrM_peak = -1
 
-        tmp = filename.rstrip(".stat.txt")
+        tmp = os.path.basename(filename).rstrip(".stat.txt")
         (n, r) = re.match("(.*?)\_r(\d+)",tmp).groups()
         fhd = open( filename, "r" )
         # skip first line "flagstat:"

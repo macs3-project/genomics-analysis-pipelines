@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2021-02-25 16:54:57 Tao Liu>
+# Time-stamp: <2021-02-25 17:11:39 Tao Liu>
 
 import os
 import sys
@@ -22,7 +22,7 @@ def main():
         promoter_peaks = -1
         dhs_peaks = -1
 
-        tmp = filename.rstrip(".peakstat.txt")
+        tmp = os.path.basename(filename).rstrip(".peakstat.txt")
         (n, r) = re.match("(.*?)\_r(\d+)",tmp).groups()
 
         fhd = open( filename, "r" )
