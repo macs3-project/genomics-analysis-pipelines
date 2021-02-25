@@ -27,6 +27,10 @@ sample_dict_list.extend( list( zip( sample2_names, sample2_files ) ) )
 sample_dict = dict( sample_dict_list )
 
 # make links
+
+if not os.path.exists( OUT_DIR ):
+    os.mkdir( OUT_DIR )
+
 if not os.path.exists( OUT_DIR + "/Raw" ):
     os.mkdir( OUT_DIR + "/Raw" )
 
