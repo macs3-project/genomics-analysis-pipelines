@@ -69,13 +69,16 @@ BIN_COUNT2 = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=samp
 # combined files
 SEQ_QC_SUMMARY = "%s/QC/%s.seqqc.stat.summary.txt" % (OUT_DIR, config["outprefix"])
 PEAK_QC_SUMMARY = "%s/QC/%s.peakqc.stat.summary.txt" % (OUT_DIR, config["outprefix"])
-FRAG_PNG  = "%s/QC/%s.peakstat.png" % (OUT_DIR, config["outprefix"])
+FRAG_PNG  = "%s/QC/%s.fragstat.png" % (OUT_DIR, config["outprefix"])
 CONSENSUS = "%s/Analysis/%s.consensus.bed" % (OUT_DIR, config["outprefix"])
 BIN_CONSENSUS = "%s/Analysis/%s.binconsensus.bed" % (OUT_DIR, config["outprefix"])
 BIN_COUNT_TABLE = "%s/Analysis/%s.bincount.table" % (OUT_DIR, config["outprefix"])
-
+GSSMAT = "%s/Analysis/%s.gss.mat.gz" % (OUT_DIR, config["outprefix"])
+GSSHEATMAP = "%s/Analysis/%s.gss.heatmap.png" % (OUT_DIR, config["outprefix"])
+GSSPROFILE = "%s/Analysis/%s.gss.profile.png" % (OUT_DIR, config["outprefix"])
+	
 TARGET = []
-TARGET.extend(PEAKS1 + PEAKS2 + BIGWIG_RAW1 + BIGWIG_RAW2 + BIGWIG_SPMR1 + BIGWIG_SPMR2 + SEQ_STAT1 + SEQ_STAT2 + PEAK_STAT1 + PEAK_STAT2 + [SEQ_QC_SUMMARY, PEAK_QC_SUMMARY, FRAG_PNG, CONSENSUS, BIN_COUNT_TABLE] )
+TARGET.extend(PEAKS1 + PEAKS2 + BIGWIG_RAW1 + BIGWIG_RAW2 + BIGWIG_SPMR1 + BIGWIG_SPMR2 + SEQ_STAT1 + SEQ_STAT2 + PEAK_STAT1 + PEAK_STAT2 + [SEQ_QC_SUMMARY, PEAK_QC_SUMMARY, FRAG_PNG, CONSENSUS, BIN_COUNT_TABLE, GSSHEATMAP, GSSPROFILE] )
 
 # decide certain parameters based on config.yaml
 mapper = config["options"]["mapper"]

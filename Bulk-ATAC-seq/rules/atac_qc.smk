@@ -103,9 +103,27 @@ rule atac_sum_peakstat:
     output:
         peakqcsummary = PEAK_QC_SUMMARY,
     params:
-        filelist = " ".join(PEAK_STAT1 + PEAK_STAT2)
+        filelist = " ".join(PEAK_STAT1 + PEAK_STAT2),
     shell:
         "utils/atac_peakqc_summary.py {params.filelist} > {output.peakqcsummary};"
+
+rule atac_plot_gss:
+    input:
+        bw1 = BIGWIG_SPMR1,
+        bw2 = BIGWIG_SPMR2,
+    output:
+        gss = temp("{OUT_DIR}/QC/gss.bed"),
+        mat = GSSMAT,
+        heatmap = GSSHEATMAP,
+        profile = GSSPROFILE,
+    params:
+        gtf = config["annotation"]["geneGTF"],
+        bwlist = " ".join( BIGWIG_SPMR1 + BIGWIG_SPMR2 ),
+    shell:
+        "awk '$3==\"gene\"{{print}}' {params.gtf} | perl -ne 'chomp;@F=split(/\\t/);$g=$F[8];$g=~s/^gene_id\\ \\\"(\\S+)\\\".*/$1/;$c=$F[0];$s=$F[6];if ($s==\\\"+\\\"){{$p=$F[3]-1}}else{{$p=$F[4]}}print join(\"\\t\",$c,$p,$p+1,$g,\".\",$s),\"\\n\"' > {output.gss};"
+        "computeMatrix reference-point -S {params.bwlist} -R {output.gss} --beforeRegionStartLength 3000 --afterRegionStartLength 3000 --skipZeros -o {output.mat};"
+        "plotHeatmap -m {output.mat} -out {output.heatmap};"
+        "plotProfile -m {output.mat} -out {output.profile} --plotType=fill --perGroup;"
         
 #rule atac_profile_gss:
 #    input:
