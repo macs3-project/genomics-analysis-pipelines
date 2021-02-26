@@ -120,10 +120,10 @@ rule atac_plot_gss:
         gtf = config["annotation"]["geneGTF"],
         bwlist = " ".join( BIGWIG_SPMR1 + BIGWIG_SPMR2 ),
     shell:
-        "awk '$3==\"gene\"{{print}}' {params.gtf} | perl -ne 'chomp;@F=split(/\\t/);$g=$F[8];$g=~s/^gene_id\\ \\\"(\\S+)\\\".*/$1/;$c=$F[0];$s=$F[6];if ($s==\\\"+\\\"){{$p=$F[3]-1}}else{{$p=$F[4]}}print join(\"\\t\",$c,$p,$p+1,$g,\".\",$s),\"\\n\"' > {output.gss};"
+        "awk '$3==\"gene\"{{print}}' {params.gtf} | perl -ne 'chomp;@F=split(/\\t/);$g=$F[8];$g=~s/^gene_id\\ \\\"(\\S+)\\\".*/$1/;$c=$F[0];$s=$F[6];if ($s==\"+\"){{$p=$F[3]-1}}else{{$p=$F[4]}}print join(\"\\t\",$c,$p,$p+1,$g,\".\",$s),\"\\n\"' > {output.gss};"
         "computeMatrix reference-point -S {params.bwlist} -R {output.gss} --beforeRegionStartLength 3000 --afterRegionStartLength 3000 --skipZeros -o {output.mat};"
         "plotHeatmap -m {output.mat} -out {output.heatmap};"
-        "plotProfile -m {output.mat} -out {output.profile} --plotType=fill --perGroup;"
+        "plotProfile -m {output.mat} -out {output.profile} --plotType=se --perGroup;"
         
 #rule atac_profile_gss:
 #    input:
