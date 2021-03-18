@@ -1,0 +1,34 @@
+name: genomics-analysis-pipelines
+channels:
+- bioconda
+- conda-forge
+- defaults
+dependencies:
+# essential
+- snakemake >=5
+- python >=3.7 
+- numpy >=1.17.3 
+- r-base >=4.0.2 
+- samtools >=1.9 
+- bedtools >=2.29.2 
+
+# alignment
+- bwa
+- picard
+
+# QC
+- fastqc
+
+# analysis
+- bioconductor-DESeq2
+- macs2 >= 2.2.7.1
+- meme
+- deeptools
+- ucsc-bedgraphtobigwig
+- ucsc-bedclip
+- bioconductor-seqlogo>=1.46.0
+- homer>=4.7
+
+# misc plotting
+- r-ggplot2 
+- r-gplots 
