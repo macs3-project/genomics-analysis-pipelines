@@ -14,55 +14,36 @@
 # a certain number of samples.
 
 # ------------------------------------------------------------------
+
+if [ $# -lt 2 ];then
+    echo "Need at least 3 parameters! <consensus file in BED format> <cutoff> <all the peak files in BED format>"
+    exit
+fi
+
+OUTPUT=$1
+CUTOFF=$2
+SAMPLE_PEAKS=${@:3}
+
 # Modify the following parameters
-#
-# define the peaks from multiple samples
-SAMPLE_PEAKS=`ls *.narrowPeak`
-
-# define the CUTOFF
-CUTOFF=3
-
 # define the minlen and maxgap for peak calling (arbitrary)
 MINLEN=200
 MAXGAP=30
 
-# define the genome file with the 1st column as chromosome name and
-# the 2nd column as chromosome length
-GENOME=~/db/genome/GRCh38/chrom.len
-
-# define the OUTPUT_PREFIX
-OUTPUT_PREFIX="consensus_peaks"
-
 # ------------------------------------------------------------------
+A=${OUTPUT}.tmp.merged
+P=${OUTPUT}.tmp.pileup
 
-# 1
-I=$SAMPLE_PEAKS
-O=${OUTPUT_PREFIX}.all.bed
+# 1 pileup
+cat $SAMPLE_PEAKS | cut -f 1,2,3 > $A
+macs3 pileup -i $A -f BEDPE -o $P
 
-rm -f $O
-touch $O
+#2 
+macs3 bdgpeakcall -i $P -o $OUTPUT --no-trackline -c $CUTOFF -g $MAXGAP -l $MINLEN
 
-for f in $I; do
-    bedtools sort -i $f | bedtools merge -i - | cut -f 1,2,3 >> $O;
-done
-
-# 2
-I=${OUTPUT_PREFIX}.all.bed
-O=${OUTPUT_PREFIX}.bdg
-
-bedtools sort -i $I | bedtools genomecov -bga -i -  -g $GENOME > $O
-
-#3 
-I=${OUTPUT_PREFIX}.bdg
-O=${OUTPUT_PREFIX}.consensus.bed
-
-macs2 bdgpeakcall -i $I -o $O --no-trackline -c $CUTOFF -g $MAXGAP -l $MINLEN
+# cleanup
+rm -f $A
+rm -f $P
 
 # end
-echo "All done. Check ${O}"
-
-
-
-
-
+echo "All done. Check ${OUTPUT}"
 

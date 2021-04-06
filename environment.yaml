@@ -32,3 +32,25 @@ dependencies:
 # misc plotting
 - r-ggplot2 
 - r-gplots 
+- bioconductor-complexheatmap  
+
+## the followings are for interactive ComplexHeatmap
+- r-cpp11
+- r-systemfonts
+- r-tinytex
+- r-selectr
+- r-jquerylib
+- r-sass
+- r-svglite
+- r-webshot
+- r-rmarkdown
+- r-rvest
+- r-bslib
+- r-sourcetools
+- r-httpuv
+- r-clisymbols
+- r-knitr
+- r-kableExtra
+- r-shiny
+
+# other misc

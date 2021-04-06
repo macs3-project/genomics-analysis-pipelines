@@ -1,5 +1,5 @@
 """
-Bulk ATAC-seq analysis pipeline.
+Bulk ChIP-seq analysis pipeline.
 """
 
 configfile: "config.yaml"
@@ -8,40 +8,115 @@ import yaml
 import sys
 import os
 
-ALL_SAMPLES = config["samples"]
+# output directory
 OUT_DIR = config["outprefix"] + "_Result"
 
-PEAKS   = expand(OUT_DIR + "/Analysis/{sample}_peaks.narrowPeak", sample=ALL_SAMPLES)
-BIGWIGS = expand(OUT_DIR + "/Analysis/{sample}_{ftype}.bw", sample=ALL_SAMPLES, ftype=["treat_pileup", "control_lambda"])
-SEQSTAT = expand(OUT_DIR + "/QC/{sample}.stat.txt", sample=ALL_SAMPLES)
-PEAKSTAT= expand(OUT_DIR + "/QC/{sample}.peakstat.txt", sample=ALL_SAMPLES)
+# file prefix
+sample1_tfiles = config["sample1tfileprefix"]
+sample2_tfiles = config["sample2tfileprefix"]
+sample1_cfiles = config["sample1cfileprefix"]
+sample2_cfiles = config["sample2cfileprefix"]
 
+# number of replicates for sample1 and sample2 conditions
+
+## treat
+n_sample1_t = len( sample1_tfiles )
+n_sample2_t = len( sample2_tfiles )
+sample1_tnames = [ "%s_t_r%d" % (config["sample1"],x) for x in range( 1, n_sample1_t + 1 ) ]
+sample2_tnames = [ "%s_t_r%d" % (config["sample2"],x) for x in range( 1, n_sample2_t + 1 ) ]
+
+## control
+n_sample1_c = len( sample1_cfiles )
+n_sample2_c = len( sample2_cfiles )
+sample1_cnames = [ "%s_c_r%d" % (config["sample1"],x) for x in range( 1, n_sample1_c + 1 ) ]
+sample2_cnames = [ "%s_c_r%d" % (config["sample2"],x) for x in range( 1, n_sample2_c + 1 ) ]
+
+# make a dictionary to match name to actual raw file prefix
+sample_t_dict_list = list( zip( sample1_tnames, sample1_tfiles ) )
+sample_t_dict_list.extend( list( zip( sample2_tnames, sample2_tfiles ) ) )
+
+sample_dict = dict( sample_t_dict_list )
+
+sample_c_dict_list = list( zip( sample1_cnames, sample1_cfiles ) )
+sample_c_dict_list.extend( list( zip( sample2_cnames, sample2_cfiles ) ) )
+
+sample_dict.update( dict( sample_c_dict_list ) )
+
+# make links
+
+if not os.path.exists( OUT_DIR ):
+    os.mkdir( OUT_DIR )
+
+if not os.path.exists( OUT_DIR + "/Raw" ):
+    os.mkdir( OUT_DIR + "/Raw" )
+
+for p in sample_dict_list:
+    src = config["fastqdir"] + "/" + p[1]+".fastq.gz"
+    tgt = OUT_DIR + "/Raw/" + p[0]+".fastq.gz"
+    if not os.path.exists( tgt ):
+        os.symlink( src, tgt )
+    else:
+        if os.path.realpath(src) != os.path.realpath(tgt):
+            os.remove( tgt )
+
+# individual sample
+PEAKS1   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=sample1_names)
+PEAKS2   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=sample2_names)
+BIGWIG_RAW1   = expand("%s/Analysis/{sample}_raw.bw" % (OUT_DIR), sample=sample1_names)
+BIGWIG_RAW2   = expand("%s/Analysis/{sample}_raw.bw" % (OUT_DIR), sample=sample2_names)
+BIGWIG_SPMR1   = expand("%s/Analysis/{sample}_spmr.bw" % (OUT_DIR), sample=sample1_names)
+BIGWIG_SPMR2   = expand("%s/Analysis/{sample}_spmr.bw" % (OUT_DIR), sample=sample2_names)
+SEQ_STAT1 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=sample1_names)
+SEQ_STAT2 = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=sample2_names)
+PEAK_STAT1= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=sample1_names)
+PEAK_STAT2= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=sample2_names)
+BIN_COUNT1 = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=sample1_names)
+BIN_COUNT2 = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=sample2_names)
+
+# combined files
+SEQ_QC_SUMMARY = "%s/QC/%s.seqqc.stat.summary.txt" % (OUT_DIR, config["outprefix"])
+PEAK_QC_SUMMARY = "%s/QC/%s.peakqc.stat.summary.txt" % (OUT_DIR, config["outprefix"])
+CONSENSUS = "%s/Analysis/%s.consensus.bed" % (OUT_DIR, config["outprefix"])
+BIN_CONSENSUS = "%s/Analysis/%s.binconsensus.bed" % (OUT_DIR, config["outprefix"])
+BIN_COUNT_TABLE = "%s/Analysis/%s.bincount.table" % (OUT_DIR, config["outprefix"])
+GSSMAT = "%s/Analysis/%s.gss.mat.gz" % (OUT_DIR, config["outprefix"])
+GSSHEATMAP = "%s/Analysis/%s.gss.heatmap.png" % (OUT_DIR, config["outprefix"])
+GSSPROFILE = "%s/Analysis/%s.gss.profile.png" % (OUT_DIR, config["outprefix"])
+	
 TARGET = []
-TARGET.extend(PEAKS + SEQSTAT + PEAKSTAT + BIGWIGS )
+TARGET.extend(PEAKS1 + PEAKS2 + BIGWIG_RAW1 + BIGWIG_RAW2 + BIGWIG_SPMR1 + BIGWIG_SPMR2 + SEQ_STAT1 + SEQ_STAT2 + PEAK_STAT1 + PEAK_STAT2 + [SEQ_QC_SUMMARY, PEAK_QC_SUMMARY,CONSENSUS, BIN_COUNT_TABLE, GSSHEATMAP, GSSPROFILE] )
 
 # decide certain parameters based on config.yaml
 mapper = config["options"]["mapper"]
-macs2_genome_option = " -g hs " if config["options"]["species"] == "GRCh38" else " -g mm "
-macs2_cutoff_option = " -p " if config["options"]["peakcalling_cutoff_method"] == "pvalue" else " -q "
-macs2_cutoff_option += str(config["options"]["peakcalling_cutoff"])
-macs2_format_option = " -f BAMPE " if config["options"]["peakcalling_PE_mode"] == "Y" else " -f BAM "
-macs2_lambda_option = " --nolambda " if config["options"]["peakcalling_disable_lambda"] == "Y" else " "
-macs2_option = f"{macs2_genome_option} {macs2_cutoff_option} {macs2_lambda_option} {macs2_format_option}"
+macs3_genome_option = " -g %s " % ( config["options"]["species"] )
+macs3_cutoff_option = " -p " if config["options"]["peakcalling_cutoff_method"] == "pvalue" else " -q "
+macs3_cutoff_option += str(config["options"]["peakcalling_cutoff"])
+macs3_format_option = " -f BAMPE " if config["options"]["peakcalling_PE_mode"] == "Y" else " -f BAM "
+macs3_lambda_option = " --nolambda " if config["options"]["peakcalling_disable_lambda"] == "Y" else " "
+macs3_callpeak_option = f"--keep-dup all -B --SPMR {macs3_genome_option} {macs3_cutoff_option} {macs3_lambda_option} {macs3_format_option}"
+macs3_pileup_option = f" {macs3_format_option} "
+
+# decide filtering parameter
+if config["options"]["paired"]:
+    bwflag_filter = " -F 3852 -f 3"
+else:
+    bwflag_filter = " -F 3844"
+
 # one line to rule all
 
 rule all:
     input: TARGET
 
 # ---- all the following rules are common rules for analyzing a single dataset ---
-
 include: "rules/chip_mapping.smk"
-include: "rules/chip_macs2.smk"
+include: "rules/chip_cleanbam.smk"
+include: "rules/chip_macs.smk"
 #include: "rules/chip_peak_annotating.smk"
 include: "rules/chip_qc.smk"
 
 
 # ---- integrative analysis of all samples ---
 
-#include: "rules/atac_dar.smk"
-#include: "rules/atac_dar_annotating.smk"
+include: "rules/chip_dar.smk"
+#include: "rules/chip_dar_annotating.smk"
 

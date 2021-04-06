@@ -67,5 +67,3 @@ annotation:
   # gene annotation in GTF
   geneGTF: /path/to/db/genome/GRCh38/gencode.v22.annotation.gtf
 
-
-
