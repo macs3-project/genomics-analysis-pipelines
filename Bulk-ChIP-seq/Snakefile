@@ -14,8 +14,7 @@ OUT_DIR = config["outprefix"] + "_Result"
 # file prefix
 sample1_tfiles = config["sample1tfileprefix"]
 sample2_tfiles = config["sample2tfileprefix"]
-sample1_cfiles = config["sample1cfileprefix"]
-sample2_cfiles = config["sample2cfileprefix"]
+sample_cfiles = config["cfileprefix"]
 
 # number of replicates for sample1 and sample2 conditions
 
@@ -26,10 +25,8 @@ sample1_tnames = [ "%s_t_r%d" % (config["sample1"],x) for x in range( 1, n_sampl
 sample2_tnames = [ "%s_t_r%d" % (config["sample2"],x) for x in range( 1, n_sample2_t + 1 ) ]
 
 ## control
-n_sample1_c = len( sample1_cfiles )
-n_sample2_c = len( sample2_cfiles )
-sample1_cnames = [ "%s_c_r%d" % (config["sample1"],x) for x in range( 1, n_sample1_c + 1 ) ]
-sample2_cnames = [ "%s_c_r%d" % (config["sample2"],x) for x in range( 1, n_sample2_c + 1 ) ]
+n_sample_c = len( sample_cfiles )
+sample_cnames = [ "control_r%d" % (x) for x in range( 1, n_sample_c + 1 ) ]
 
 # make a dictionary to match name to actual raw file prefix
 sample_t_dict_list = list( zip( sample1_tnames, sample1_tfiles ) )

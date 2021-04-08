@@ -11,18 +11,18 @@ sample2: sample_name2
 
 # sample raw filename prefix for condition 1, fastq files in fastqdir should be NAME.fastq.gz
 sample1tfileprefix: [cond1_treat_rep1, cond1_treat_rep2, cond1_treat_rep3, cond1_treat_rep4]
-sample1cfileprefix: [cond1_control_rep1, cond1_control_rep2, cond1_control_rep3, cond1_control_rep4]
+
 # sample raw filename prefix for condition 2, fastq files in fastqdir should be NAME.fastq.gz
 sample2tfileprefix: [cond2_treat_rep1, cond2_treat_rep2, cond2_treat_rep3, cond2_treat_rep4] 
-sample2cfileprefix: [cond2_control_rep1, cond2_control_rep2, cond2_control_rep3, cond2_control_rep4]
+
+# sample raw filename prefix for control, fastq files in fastqdir should be NAME.fastq.gz
+cfileprefix: [control_rep1, control_rep2, control_rep3, control_rep4]
 
 options:
   # options for the analysis
   # merge controls. If yes, controls for the same condition will be 
   # merged during peak calling; otherwise, treatment and control will
   # be matched. default: Y
-  merge_controls: Y   
-  # mapping for paired-end or not, choose Y or N
   paired: N
   # aligner for mapping reads, choose from minimap2, bwa-mem,
   # bwa-mem2, and chrommap
