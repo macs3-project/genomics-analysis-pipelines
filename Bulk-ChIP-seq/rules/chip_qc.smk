@@ -1,3 +1,4 @@
+# qc for sequencing alignment from each replicate
 rule chip_qcstat:
     input:
         dirty_bam = "{OUT_DIR}/Alignment/{name}.sortedByPos.mkdp.bam",
@@ -32,6 +33,7 @@ rule chip_qcstat:
         "echo 'non chrM reads in peak:' >> {output.qc_stat};"
         "bedtools intersect -a {output.uniq_clean_bed} -b {input.peak} -u | wc -l >> {output.qc_stat};"
 
+# qc for peakcalls from each replicate
 rule chip_peakqc:
     input:
         peak = "{OUT_DIR}/Analysis/{name}_peaks.narrowPeak",
@@ -62,39 +64,40 @@ rule chip_peakqc:
         "echo 'number of peaks in DHS regions:' >> {output.peak_qc};"
         "bedtools intersect -a {input.peak} -b {params.DHS} -u | wc -l >> {output.peak_qc};"
 
+# combine all sequencing qc together
 rule chip_sum_qcstat:
     input:
-        qcstat1 = SEQ_STAT1,
-        qcstat2 = SEQ_STAT2,
+        qcstat_t = SEQ_STAT_T,
+        qcstat_c = SEQ_STAT_C,
     output:
         seqqcsummary = SEQ_QC_SUMMARY,
     params:
-        filelist = " ".join(SEQ_STAT1 + SEQ_STAT2)
+        filelist = " ".join(SEQ_STAT_T + SEQ_STAT_C)
     shell:
         "utils/chip_seqqc_summary.py {params.filelist} > {output.seqqcsummary};"
 
+# combine all peak qc together
 rule chip_sum_peakstat:
     input:
-        peakstat1 = PEAK_STAT1,
-        peakstat2 = PEAK_STAT2,
+        peakstat = PEAK_STAT,
     output:
         peakqcsummary = PEAK_QC_SUMMARY,
     params:
-        filelist = " ".join(PEAK_STAT1 + PEAK_STAT2),
+        filelist = " ".join(PEAK_STAT),
     shell:
         "utils/chip_peakqc_summary.py {params.filelist} > {output.peakqcsummary};"
 
+
 rule chip_plot_gss:
     input:
-        bw1 = BIGWIG_SPMR1,
-        bw2 = BIGWIG_SPMR2,
+        bw = BIGWIG_SPMR,
     output:
         mat = GSSMAT,
         heatmap = GSSHEATMAP,
         profile = GSSPROFILE,
     params:
         gtf = config["annotation"]["geneGTF"],
-        bwlist = " ".join( BIGWIG_SPMR1 + BIGWIG_SPMR2 ),
+        bwlist = " ".join( BIGWIG_SPMR),
     shell:
         "awk '$3==\"gene\"{{print}}' {params.gtf} | perl -ne 'chomp;@F=split(/\\t/);$g=$F[8];$g=~s/^gene_id\\ \\\"(\\S+)\\\".*/$1/;$c=$F[0];$s=$F[6];if ($s==\"+\"){{$p=$F[3]-1}}else{{$p=$F[4]}}print join(\"\\t\",$c,$p,$p+1,$g,\".\",$s),\"\\n\"' > gss.bed;"
         "computeMatrix reference-point -S {params.bwlist} -R gss.bed --beforeRegionStartLength 3000 --afterRegionStartLength 3000 --skipZeros -o {output.mat};"
@@ -102,13 +105,3 @@ rule chip_plot_gss:
         "plotHeatmap -m {output.mat} -out {output.heatmap};"
         "plotProfile -m {output.mat} -out {output.profile} --plotType=se --perGroup;"
         
-#rule chip_profile_gss:
-#    input:
-#        peak   = "{OUT_DIR}/Analysis/{name}_peaks.narrowPeak",
-#        bigwig = "{OUT_DIR}/Analysis/{name}_spmr.bw",
-#    output:
-#        fig = "{OUT_DIR}/QC/{name}_profile_gss.png",
-#    params:
-#        gtf = config["annotation"]["geneGTF"],
-#    shell:
-#        "awk '$3==\"gene\"{{print}}' {params.gtf} | perl -ne 'chomp;@F=split(/\\t/);$s=$F[8];$s=~s/^gene_id\\ \\\"\(\\S+\)\\\".*/$1/;print $F[0],$s,\"\\n\"'"

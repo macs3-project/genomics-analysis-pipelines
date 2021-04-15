@@ -19,7 +19,7 @@ cfiles = config["cfileprefix"]
 
 ## treat
 n_t = len( tfiles )
-tnames = [ "%s_t_r%d" % (config["sample1"],x) for x in range( 1, n_t + 1 ) ]
+tnames = [ "%s_r%d" % (config["sample"],x) for x in range( 1, n_t + 1 ) ]
 
 ## control
 n_c = len( cfiles )
@@ -42,9 +42,12 @@ if not os.path.exists( OUT_DIR ):
 if not os.path.exists( OUT_DIR + "/Raw" ):
     os.mkdir( OUT_DIR + "/Raw" )
 
+print( sample_dict )
+
 for p in sample_dict:
-    src = config["fastqdir"] + "/" + p[1]+".fastq.gz"
-    tgt = OUT_DIR + "/Raw/" + p[0]+".fastq.gz"
+    src = os.path.abspath(config["fastqdir"]) + "/" + sample_dict[ p ] +".fastq.gz"
+    tgt = OUT_DIR + "/Raw/" + p +".fastq.gz"
+    print( src, tgt )
     if not os.path.exists( tgt ):
         os.symlink( src, tgt )
     else:
@@ -53,25 +56,27 @@ for p in sample_dict:
 
 # individual sample
 PEAKS   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=tnames)
-BIGWIG_RAW   = expand("%s/Analysis/{sample}_raw.bw" % (OUT_DIR), sample=tnames)
-BIGWIG_SPMR   = expand("%s/Analysis/{sample}_spmr.bw" % (OUT_DIR), sample=tnames)
+BIGWIG_RAW   = expand("%s/Analysis/{sample}_t_raw.bw" % (OUT_DIR), sample=tnames)
+BIGWIG_LOGFC   = expand("%s/Analysis/{sample}_logfc.bw" % (OUT_DIR), sample=tnames)
+BIGWIG_PSCORE   = expand("%s/Analysis/{sample}_pscore.bw" % (OUT_DIR), sample=tnames)
+BIGWIG_SPMR   = expand("%s/Analysis/{sample}_t_spmr.bw" % (OUT_DIR), sample=tnames)
 SEQ_STAT_T = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=tnames)
 SEQ_STAT_C = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=cnames)
 PEAK_STAT= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=tnames)
-BIN_COUNT = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=tnames)
+#BIN_COUNT = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=tnames)
 
 # combined files
 SEQ_QC_SUMMARY = "%s/QC/%s.seqqc.stat.summary.txt" % (OUT_DIR, config["outprefix"])
 PEAK_QC_SUMMARY = "%s/QC/%s.peakqc.stat.summary.txt" % (OUT_DIR, config["outprefix"])
-CONSENSUS = "%s/Analysis/%s.consensus.bed" % (OUT_DIR, config["outprefix"])
-BIN_CONSENSUS = "%s/Analysis/%s.binconsensus.bed" % (OUT_DIR, config["outprefix"])
-BIN_COUNT_TABLE = "%s/Analysis/%s.bincount.table" % (OUT_DIR, config["outprefix"])
+#CONSENSUS = "%s/Analysis/%s.consensus.bed" % (OUT_DIR, config["outprefix"])
+#BIN_CONSENSUS = "%s/Analysis/%s.binconsensus.bed" % (OUT_DIR, config["outprefix"])
+#BIN_COUNT_TABLE = "%s/Analysis/%s.bincount.table" % (OUT_DIR, config["outprefix"])
 GSSMAT = "%s/Analysis/%s.gss.mat.gz" % (OUT_DIR, config["outprefix"])
 GSSHEATMAP = "%s/Analysis/%s.gss.heatmap.png" % (OUT_DIR, config["outprefix"])
 GSSPROFILE = "%s/Analysis/%s.gss.profile.png" % (OUT_DIR, config["outprefix"])
 	
 TARGET = []
-TARGET.extend(PEAKS + BIGWIG_RAW + BIGWIG_SPMR + SEQ_STAT_T + SEQ_STAT_C + PEAK_STAT + [SEQ_QC_SUMMARY, PEAK_QC_SUMMARY,CONSENSUS, BIN_COUNT_TABLE, GSSHEATMAP, GSSPROFILE] )
+TARGET.extend(PEAKS + BIGWIG_RAW + BIGWIG_SPMR + BIGWIG_LOGFC + BIGWIG_PSCORE + SEQ_STAT_T + SEQ_STAT_C + PEAK_STAT + [SEQ_QC_SUMMARY, PEAK_QC_SUMMARY, GSSHEATMAP, GSSPROFILE] )
 
 # decide certain parameters based on config.yaml
 mapper = config["options"]["mapper"]
@@ -80,7 +85,7 @@ macs3_cutoff_option = " -p " if config["options"]["peakcalling_cutoff_method"] =
 macs3_cutoff_option += str(config["options"]["peakcalling_cutoff"])
 macs3_format_option = " -f BAMPE " if config["options"]["peakcalling_PE_mode"] == "Y" else " -f BAM "
 macs3_lambda_option = " --nolambda " if config["options"]["peakcalling_disable_lambda"] == "Y" else " "
-macs3_callpeak_option = f"--keep-dup all -B --SPMR {macs3_genome_option} {macs3_cutoff_option} {macs3_lambda_option} {macs3_format_option}"
+macs3_callpeak_option = f"--keep-dup all -B {macs3_genome_option} {macs3_cutoff_option} {macs3_lambda_option} {macs3_format_option}"
 macs3_pileup_option = f" {macs3_format_option} "
 
 # decide filtering parameter
@@ -104,6 +109,6 @@ include: "rules/chip_qc.smk"
 
 # ---- integrative analysis of all samples ---
 
-include: "rules/chip_dar.smk"
+#include: "rules/chip_dar.smk"
 #include: "rules/chip_dar_annotating.smk"
 
