@@ -1,5 +1,5 @@
 if config["options"]["mapper"] == "minimap2":
-    if config["options"]["paired"]:   
+    if config["options"]["paired"] == "Y":   
         rule chip_map:
             input:
                 fastq1 = "{OUT_DIR}/Raw/{name}_R1.fastq.gz",
@@ -30,7 +30,7 @@ if config["options"]["mapper"] == "minimap2":
                 "| samtools sort --threads {threads} -o {output.bam}"
 
 elif config["options"]["mapper"] == "bwa-mem":
-    if config["options"]["paired"]:
+    if config["options"]["paired"] == "Y":
         rule chip_map:
             input:
                 fastq1 = "{OUT_DIR}/Raw/{name}_R1.fastq.gz",
