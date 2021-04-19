@@ -2,7 +2,7 @@
 Bulk ChIP-seq analysis pipeline.
 """
 
-configfile: "config.yaml"
+#configfile: "config.yaml"
 
 import yaml
 import sys
