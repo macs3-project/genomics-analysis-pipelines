@@ -94,7 +94,6 @@ rule chip_sum_peakstat:
     shell:
         "utils/chip_peakqc_summary.py {params.filelist} > {output.peakqcsummary};"
 
-
 rule chip_plot_gss:
     input:
         bw = BIGWIG_SPMR,
@@ -102,13 +101,13 @@ rule chip_plot_gss:
         mat = GSSMAT,
         heatmap = GSSHEATMAP,
         profile = GSSPROFILE,
+        gssfile = temp("{OUT_DIR}/Alignment/gss.bed"),
     params:
         gtf = config["annotation"]["geneGTF"],
         bwlist = " ".join( BIGWIG_SPMR),
     shell:
-        "awk '$3==\"gene\"{{print}}' {params.gtf} | perl -ne 'chomp;@F=split(/\\t/);$g=$F[8];$g=~s/^gene_id\\ \\\"(\\S+)\\\".*/$1/;$c=$F[0];$s=$F[6];if ($s==\"+\"){{$p=$F[3]-1}}else{{$p=$F[4]}}print join(\"\\t\",$c,$p,$p+1,$g,\".\",$s),\"\\n\"' > gss.bed;"
-        "computeMatrix reference-point -S {params.bwlist} -R gss.bed --beforeRegionStartLength 3000 --afterRegionStartLength 3000 --skipZeros -o {output.mat};"
-        "rm -f gss.bed;"
+        "awk '$3==\"gene\"{{print}}' {params.gtf} | perl -ne 'chomp;@F=split(/\\t/);$g=$F[8];$g=~s/^gene_id\\ \\\"(\\S+)\\\".*/$1/;$c=$F[0];$s=$F[6];if ($s==\"+\"){{$p=$F[3]-1}}else{{$p=$F[4]}}print join(\"\\t\",$c,$p,$p+1,$g,\".\",$s),\"\\n\"' > {output.gssfile};"
+        "computeMatrix reference-point -S {params.bwlist} -R {output.gssfile} --beforeRegionStartLength 3000 --afterRegionStartLength 3000 --skipZeros -o {output.mat};"
         "plotHeatmap -m {output.mat} -out {output.heatmap};"
         "plotProfile -m {output.mat} -out {output.profile} --plotType=se --perGroup;"
         
