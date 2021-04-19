@@ -34,6 +34,12 @@ rule chip_qcstat:
         "bedtools intersect -a {output.uniq_clean_bed} -b {input.peak} -u | wc -l >> {output.qc_stat};"
 
 # qc for peakcalls from each replicate
+def get_name ( wcs ):
+    if config["options"]["paired"] == "Y":
+        return "fragments"
+    else:
+        return "tags"
+    
 rule chip_peakqc:
     input:
         peak = "{OUT_DIR}/Analysis/{name}_peaks.narrowPeak",
@@ -41,6 +47,7 @@ rule chip_peakqc:
     output:
         peak_qc = "{OUT_DIR}/QC/{name}.peakstat.txt",
     params:
+        name_tag =  get_name,
         promoter = config["annotation"]["promoter"],
         chrMregion = config["annotation"]["MtBed"],
         blacklist = config["annotation"]["blacklist"],
@@ -50,11 +57,11 @@ rule chip_peakqc:
     benchmark:
         "{OUT_DIR}/Benchmark/{name}_PeakQCStat.benchmark",
     shell:
-        "grep 'total fragments in treatment' {input.peakxls} | perl -pe 's/#\ //' > {output.peak_qc} || true; "
+        "grep 'total {params.name_tag} in treatment' {input.peakxls} | perl -pe 's/#\ //' > {output.peak_qc}; "
         "echo 'total number of peaks:' >> {output.peak_qc}; "
         "wc -l {input.peak} | cut -f 1 -d' ' >> {output.peak_qc}; "
         "echo 'number of peaks over FC 2:' >> {output.peak_qc}; "
-        "awk '$7>=2{{print}}' {input.peak} | wc -l >> {output.peak_qc} || true; "
+        "awk '$7>=2{{print}}' {input.peak} | wc -l >> {output.peak_qc}; "
         "echo 'number of peaks in blacklist regions:' >> {output.peak_qc}; "
         "bedtools intersect -a {input.peak} -b {params.blacklist} -u | wc -l >> {output.peak_qc}; "
         "echo 'number of peaks in chrM:' >> {output.peak_qc}; "
