@@ -33,7 +33,7 @@ rule chip_signaltracks:
     params:
         name = "{name}",
     shell:
-        "macs3 bdgcmp -t {input.bdg_raw_t} -c {input.bdg_raw_c} -m ppois logfc -o {output.bdg_pscore} {output.bdg_logfc}; "
+        "macs3 bdgcmp -t {input.bdg_raw_t} -c {input.bdg_raw_c} -m ppois logFE -o {output.bdg_pscore} {output.bdg_logfc}; "
         "macs3 callpeak --outdir {OUT_DIR}/Analysis -n {params.name}.spmr {macs3_callpeak_option} --SPMR -t {input.bam} -c {input.cbam};"
         "mv {OUT_DIR}/Analysis/{params.name}.spmr_treat_pileup.bdg {output.bdg_spmr}; "
         "rm -f {OUT_DIR}/Analysis/{params.name}.spmr*; "

@@ -89,7 +89,7 @@ macs3_callpeak_option = f"--keep-dup all -B {macs3_genome_option} {macs3_cutoff_
 macs3_pileup_option = f" {macs3_format_option} "
 
 # decide filtering parameter
-if config["options"]["paired"]:
+if config["options"]["paired"] == "Y":
     bwflag_filter = " -F 3840 -f 3"
 else:
     bwflag_filter = " -F 3840"

@@ -50,19 +50,19 @@ rule chip_peakqc:
     benchmark:
         "{OUT_DIR}/Benchmark/{name}_PeakQCStat.benchmark",
     shell:
-        "grep 'total fragments in treatment' {input.peakxls} | perl -pe 's/# //' > {output.peak_qc};"
-        "echo 'total number of peaks:' >> {output.peak_qc};"
-        "wc -l {input.peak} | cut -f 1 -d' ' >> {output.peak_qc};"
-        "echo 'number of peaks over FC 2:' >> {output.peak_qc};"
-        "awk '$7>=2{{print}}' {input.peak} | wc -l >> {output.peak_qc};"
-        "echo 'number of peaks in blacklist regions:' >> {output.peak_qc};"
-        "bedtools intersect -a {input.peak} -b {params.blacklist} -u | wc -l >> {output.peak_qc};"
-        "echo 'number of peaks in chrM:' >> {output.peak_qc};"
-        "bedtools intersect -a {input.peak} -b {params.chrMregion} -u | wc -l >> {output.peak_qc};"
-        "echo 'number of peaks in promoter regions:' >> {output.peak_qc};"
-        "bedtools intersect -a {input.peak} -b {params.promoter} -u | wc -l >> {output.peak_qc};"
-        "echo 'number of peaks in DHS regions:' >> {output.peak_qc};"
-        "bedtools intersect -a {input.peak} -b {params.DHS} -u | wc -l >> {output.peak_qc};"
+        "grep 'total fragments in treatment' {input.peakxls} | perl -pe 's/#\ //' > {output.peak_qc} || true; "
+        "echo 'total number of peaks:' >> {output.peak_qc}; "
+        "wc -l {input.peak} | cut -f 1 -d' ' >> {output.peak_qc}; "
+        "echo 'number of peaks over FC 2:' >> {output.peak_qc}; "
+        "awk '$7>=2{{print}}' {input.peak} | wc -l >> {output.peak_qc} || true; "
+        "echo 'number of peaks in blacklist regions:' >> {output.peak_qc}; "
+        "bedtools intersect -a {input.peak} -b {params.blacklist} -u | wc -l >> {output.peak_qc}; "
+        "echo 'number of peaks in chrM:' >> {output.peak_qc}; "
+        "bedtools intersect -a {input.peak} -b {params.chrMregion} -u | wc -l >> {output.peak_qc}; "
+        "echo 'number of peaks in promoter regions:' >> {output.peak_qc}; "
+        "bedtools intersect -a {input.peak} -b {params.promoter} -u | wc -l >> {output.peak_qc}; "
+        "echo 'number of peaks in DHS regions:' >> {output.peak_qc}; "
+        "bedtools intersect -a {input.peak} -b {params.DHS} -u | wc -l >> {output.peak_qc}; "
 
 # combine all sequencing qc together
 rule chip_sum_qcstat:
