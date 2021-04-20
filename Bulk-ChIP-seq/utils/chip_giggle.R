@@ -33,6 +33,7 @@ RunGiggle <- function(peakbed, giggle.exec, giggle.path, organism, antFile){
   colnames(targetDf) <- c("sample_id", "sample_peak_number", "overlap_peak_number", "giggle_score", "odds_ratio", "fisher_right_tail", "GSM_id", "species", "factor", "cell_line", "cell_type", "tissue", "disease")
 
   targetDf$biological_resource <- apply(targetDf, 1, function(x) return(paste0(x[7:10], collapse=";")))
+  targetDf$label <- apply(targetDf, 1, function(x) return(paste0(x[10], x[9], collapse=":")))
   targetDf$fisher_right_tail <- -log10(targetDf$"fisher_right_tail")
   targetDf$"odds_ratio" <- log10(targetDf$"odds_ratio")  
   
@@ -49,11 +50,11 @@ RunGiggle <- function(peakbed, giggle.exec, giggle.path, organism, antFile){
 
 giggle.res <- RunGiggle( pfile, giggle, gigglepath, "GRCh38", ant)
 
+giggle.res.top10 <- giggle.res[order(giggle.res$giggle_score,decreasing = T),][1:10,]
+
 pdf( paste0(pfile,"_giggle_cistrome.pdf"), width=10, height=8 )
 
-giggle.res$label <- paste0(giggle.res$"biological_resource",":",giggle.res$factor)
-
 p <- ggplot(data=giggle.res, aes(x=odds_ratio, y=fisher_right_tail, label=label)) + geom_point()
-p + geom_label_repel(force=10, size=2, data = giggle.res[giggle.res$fisher_right_tail>100,]) + xlab("Giggle log10 odds_ratio") + ylab("Giggle Fisher-test right-tail -log10 pvalue")
+p + geom_label_repel(force=10, size=2, data = giggle.res.top10) + xlab("Giggle log10 odds_ratio") + ylab("Giggle Fisher-test right-tail -log10 pvalue")
 
 dev.off()
