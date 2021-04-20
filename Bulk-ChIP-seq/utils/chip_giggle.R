@@ -55,6 +55,6 @@ giggle.res.top10 <- giggle.res[order(giggle.res$giggle_score,decreasing = T),][1
 pdf( paste0(pfile,"_giggle_cistrome.pdf"), width=10, height=8 )
 
 p <- ggplot(data=giggle.res, aes(x=odds_ratio, y=fisher_right_tail, label=labels)) + geom_point()
-p + geom_label_repel(force=10, size=2, data = giggle.res.top10) + xlab("Giggle log10 odds_ratio") + ylab("Giggle Fisher-test right-tail -log10 pvalue")
+p + geom_label_repel(force=20, size=2, data = giggle.res.top10) + xlab("Giggle log10 odds_ratio") + ylab("Giggle Fisher-test right-tail -log10 pvalue")
 
 dev.off()
