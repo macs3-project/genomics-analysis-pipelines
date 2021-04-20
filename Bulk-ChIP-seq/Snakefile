@@ -61,6 +61,7 @@ SEQ_STAT_T = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=tnames)
 SEQ_STAT_C = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=cnames)
 PEAK_STAT= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=tnames)
 PEAK_ANNO= expand("%s/Analysis/{sample}_peaks.narrowPeak_chip_annotation.pdf" % (OUT_DIR), sample=tnames)
+PEAK_GIGGLE= expand("%s/Analysis/{sample}_peaks.narrowPeak_giggle_cistrome.pdf" % (OUT_DIR), sample=tnames)
 #BIN_COUNT = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=tnames)
 
 # combined files
@@ -74,7 +75,7 @@ GSSHEATMAP = "%s/Analysis/%s.gss.heatmap.png" % (OUT_DIR, config["outprefix"])
 GSSPROFILE = "%s/Analysis/%s.gss.profile.png" % (OUT_DIR, config["outprefix"])
 	
 TARGET = []
-TARGET.extend(PEAKS + BIGWIG_RAW + BIGWIG_SPMR + BIGWIG_LOGFC + BIGWIG_PSCORE + SEQ_STAT_T + SEQ_STAT_C + PEAK_STAT + PEAK_ANNO + [SEQ_QC_SUMMARY, PEAK_QC_SUMMARY, GSSHEATMAP, GSSPROFILE] )
+TARGET.extend(PEAKS + BIGWIG_RAW + BIGWIG_SPMR + BIGWIG_LOGFC + BIGWIG_PSCORE + SEQ_STAT_T + SEQ_STAT_C + PEAK_STAT + PEAK_ANNO + PEAK_GIGGLE + [SEQ_QC_SUMMARY, PEAK_QC_SUMMARY, GSSHEATMAP, GSSPROFILE] )
 
 # decide certain parameters based on config.yaml
 mapper = config["options"]["mapper"]

@@ -17,7 +17,6 @@ library(org.Hs.eg.db)
 library(ChIPseeker)
 library(patchwork)
 library(clusterProfiler)
-library(plotly)
 
 pfile <- args[1]
 gmtfolder <- args[2]

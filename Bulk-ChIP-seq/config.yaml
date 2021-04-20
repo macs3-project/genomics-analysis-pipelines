@@ -68,3 +68,7 @@ annotation:
   geneGTF: /path/to/db/genome/GRCh38/gencode.v22.annotation.gtf
   # GMT files for functional annotation
   GMT: /path/to/db/MSigDB_gmt_files
+  # Giggle exec
+  giggle: /path/to/giggle_bin
+  # Giggle DB
+  giggledb: /path/to/giggledb/
