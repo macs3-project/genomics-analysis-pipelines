@@ -1,5 +1,5 @@
 # qc for sequencing alignment from each replicate
-rule chip_qcstat:
+rule chip_peakanno:
     input:
         peak = "{OUT_DIR}/Analysis/{name}_peaks.narrowPeak",
     output:
