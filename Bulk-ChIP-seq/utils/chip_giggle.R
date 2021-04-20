@@ -16,9 +16,9 @@ ant <- read.csv(paste0(gigglepath,"/CistromeDB.sample.annotation.txt"), sep="\t"
 
 RunGiggle <- function(peakbed, giggle.exec, giggle.path, organism, antFile){
   outputBed = peakbed
-  cmd <- paste0("sort --buffer-size 2G -k1,1 -k2,2n -k3,3n ", outputBed, " | cut -f 1,2,3 | bgzip -c > ", outputBed, ".gz")
+  cmd <- paste0("sort --buffer-size 2G -k1,1 -k2,2n -k3,3n ", outputBed, " | cut -f 1,2,3 | bgzip -c > ", outputBed, ".bed.gz")
   system(cmd)
-  cmd <- paste0(giggle.exec, " search -g 2700000000 -i ", giggle.path, "/giggle.", organism, " -q ", outputBed, ".gz -s > ", outputBed, ".result.xls")
+  cmd <- paste0(giggle.exec, " search -g 2700000000 -i ", giggle.path, "/giggle.", organism, " -q ", outputBed, ".bed.gz -s > ", outputBed, ".result.xls")
   system(cmd)
   resultDf <- read.table(paste0(outputBed, ".result.xls"), sep="\t", row.names=NULL, comment.char="", stringsAsFactors =  FALSE)
   resultDf <- resultDf[,-9]
@@ -36,7 +36,7 @@ RunGiggle <- function(peakbed, giggle.exec, giggle.path, organism, antFile){
   targetDf <- targetDf[order(-targetDf$giggle_score), ]
   targetDf <- targetDf[!duplicated(targetDf$factor), ]
   write.table(targetDf, paste0(outputBed, ".giggle.res.tfs.txt"), sep="\t", quote=FALSE, row.names=FALSE)
-  cmd <- paste0("rm ", outputBed, ".gz")
+  cmd <- paste0("rm ", outputBed, ".bed.gz")
   system(cmd)
   cmd <- paste0("rm ", outputBed, ".result.xls")
   system(cmd)
