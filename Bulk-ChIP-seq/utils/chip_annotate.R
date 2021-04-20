@@ -57,51 +57,51 @@ fig
 
 # load GMT files
 # hall mark
-hgmtfile <- paste0(gmtfoler, "/h.all.entrez.gmt")
+hgmtfile <- paste0(gmtfolder, "/h.all.entrez.gmt")
 hgene <- read.gmt(hgmtfile)
 
 # ontology
-c5gmtfile <- paste0(gmtfoler, "/c5.go.bp.entrez.gmt")
+c5gmtfile <- paste0(gmtfolder, "/c5.go.bp.entrez.gmt")
 bpgene <- read.gmt(c5gmtfile)
 
 # Human Phenotype Ontology
-hpogmtfile <- paste0(gmtfoler, "/c5.hpo.entrez.gmt")
+hpogmtfile <- paste0(gmtfolder, "/c5.hpo.entrez.gmt")
 hpogene <- read.gmt(hpogmtfile)
 
 # oncogenic signature
-c6gmtfile <- paste0(gmtfoler, "/c6.all.entrez.gmt")
+c6gmtfile <- paste0(gmtfolder, "/c6.all.entrez.gmt")
 oncogene <- read.gmt(c6gmtfile)
 
 # immuneSigDB
-c7gmtfile <- paste0(gmtfoler, "/c7.immunesigdb.entrez.gmt")
+c7gmtfile <- paste0(gmtfolder, "/c7.immunesigdb.entrez.gmt")
 imgene <- read.gmt(c7gmtfile)
 
 # TF targets Signatures
-c3gmtfile <- paste0(gmtfoler, "/c3.tft.entrez.gmt")
+c3gmtfile <- paste0(gmtfolder, "/c3.tft.entrez.gmt")
 tftgene <- read.gmt(c3gmtfile)
 
 # Curated Reactome Pathways
-rpgmtfile <- paste0(gmtfoler, "/c2.cp.reactome.entrez.gmt")
+rpgmtfile <- paste0(gmtfolder, "/c2.cp.reactome.entrez.gmt")
 rpgene <- read.gmt(rpgmtfile)
 
 # Curated Wikipathways 
-wpgmtfile <- paste0(gmtfoler, "/c2.cp.wikipathways.entrez.gmt")
+wpgmtfile <- paste0(gmtfolder, "/c2.cp.wikipathways.entrez.gmt")
 wpgene <- read.gmt(wpgmtfile)
 
 # Curated Biocarta
-bcgmtfile <- paste0(gmtfoler, "/c2.cp.biocarta.entrez.gmt")
+bcgmtfile <- paste0(gmtfolder, "/c2.cp.biocarta.entrez.gmt")
 bcgene <- read.gmt(bcgmtfile)
 
 # Curated KEGG
-kegggmtfile <- paste0(gmtfoler, "/c2.cp.kegg.entrez.gmt")
+kegggmtfile <- paste0(gmtfolder, "/c2.cp.kegg.entrez.gmt")
 kegggene <- read.gmt(kegggmtfile)
 
 # Curated Canonical Pathways
-cpgmtfile <- paste0(gmtfoler, "/c2.cp.entrez.gmt")
+cpgmtfile <- paste0(gmtfolder, "/c2.cp.entrez.gmt")
 cpgene <- read.gmt(cpgmtfile)
 
 # Curated All
-c2gmtfile <- paste0(gmtfoler, "/c2.entrez.gmt")
+c2gmtfile <- paste0(gmtfolder, "/c2.entrez.gmt")
 curatedgene <- read.gmt(c2gmtfile)
 
 # cutoff
