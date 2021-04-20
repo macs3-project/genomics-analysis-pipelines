@@ -33,11 +33,11 @@ RunGiggle <- function(peakbed, giggle.exec, giggle.path, organism, antFile){
   colnames(targetDf) <- c("sample_id", "sample_peak_number", "overlap_peak_number", "giggle_score", "odds_ratio", "fisher_right_tail", "GSM_id", "species", "factor", "cell_line", "cell_type", "tissue", "disease")
 
   targetDf$biological_resource <- apply(targetDf, 1, function(x) return(paste0(x[7:10], collapse=";")))
-  targetDf$labels <- apply(targetDf, 1, function(x) return(paste0(x[10], x[9], collapse=":")))
+  targetDf$labels <- paste0(targetDf$"cell_line",":",targetDf$"factor")
   targetDf$fisher_right_tail <- -log10(targetDf$"fisher_right_tail")
   targetDf$"odds_ratio" <- log10(targetDf$"odds_ratio")  
   
-  targetDf <- targetDf[, c("sample_id", "GSM_id", "species", "factor", "biological_resource", "giggle_score", "odds_ratio", "fisher_right_tail", "sample_peak_number", "overlap_peak_number")]
+  targetDf <- targetDf[, c("sample_id", "GSM_id", "species", "factor", "biological_resource", "labels", "giggle_score", "odds_ratio", "fisher_right_tail", "sample_peak_number", "overlap_peak_number")]
   targetDf <- targetDf[order(-targetDf$giggle_score), ]
   targetDf <- targetDf[!duplicated(targetDf$factor), ]
   write.table(targetDf, paste0(outputBed, ".giggle.res.tfs.txt"), sep="\t", quote=FALSE, row.names=FALSE)
