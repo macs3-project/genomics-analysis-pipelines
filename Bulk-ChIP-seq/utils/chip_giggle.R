@@ -3,7 +3,7 @@
 # take arguments from command line
 args = commandArgs(trailingOnly=TRUE)
 
-if (length(args)<=3) {
+if (length(args)<3) {
     stop("<peak file> <giggle exec path> <giggle index folder>.n", call.=FALSE)
 }
 
