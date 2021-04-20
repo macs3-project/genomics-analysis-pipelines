@@ -14,6 +14,7 @@ library(org.Hs.eg.db)
 #library(TxDb.Hsapiens.UCSC.mm38.knownGene)
 #library(org.Mm.eg.db)
 
+library(ggplot2)
 library(ChIPseeker)
 library(patchwork)
 library(clusterProfiler)
