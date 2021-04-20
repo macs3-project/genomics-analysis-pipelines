@@ -8,6 +8,9 @@ if (length(args)<3) {
 }
 
 # load libraries
+library(ggplot2)
+library(ggrepel)
+
 pfile <- args[1]
 giggle <- args[2]
 gigglepath <- args[3]
