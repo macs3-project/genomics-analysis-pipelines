@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2021-02-25 17:16:42 Tao Liu>
+# Time-stamp: <2021-04-20 00:28:56 Tao Liu>
 
 import os
 import sys
@@ -38,12 +38,7 @@ def main():
         # dup
         l = fhd.readline()    
         duplicated = int(l.split(" ")[0])
-        # skip the next four lines
-        fhd.readline()
-        fhd.readline()
-        fhd.readline()
-        fhd.readline()    
-        # map
+        # mapped
         l = fhd.readline()    
         mapped = int(l.split(" ")[0])
         # read until 'mapped Q30'

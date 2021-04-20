@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2021-02-25 17:11:39 Tao Liu>
+# Time-stamp: <2021-04-20 00:29:38 Tao Liu>
 
 import os
 import sys
@@ -13,10 +13,10 @@ def main():
         sys.exit(1)
 
     files = sys.argv[1:]
-    print( "sample_name\treplicate\ttotal_pairs\ttotal_peaks\tpeaks_in_blacklist\tpeaks_in_promoters\tratio_of_peaks_in_promoters\tpeaks_in_DHSs\tratio_of_peaks_in_DHSs")
+    print( "sample_name\treplicate\ttotal_reads\ttotal_peaks\tpeaks_in_blacklist\tpeaks_in_promoters\tratio_of_peaks_in_promoters\tpeaks_in_DHSs\tratio_of_peaks_in_DHSs")
 
     for filename in files:
-        total_pairs = -1
+        total_reads = -1
         total_peaks = -1
         blacklist_peaks = -1
         promoter_peaks = -1
@@ -27,9 +27,9 @@ def main():
 
         fhd = open( filename, "r" )
 
-        # total pairs
+        # total reads
         l = fhd.readline()
-        total_pairs = int(l.split(": ")[1])
+        total_reads = int(l.split(": ")[1])
         # skip the next line
         fhd.readline()
         # total peaks
@@ -55,7 +55,7 @@ def main():
         l = fhd.readline()    
         dhs_peaks = int(l.rstrip())
 
-        print( f"{n}\t{r}\t{total_pairs}\t{total_peaks}\t{blacklist_peaks}\t{promoter_peaks}\t{promoter_peaks/total_peaks:.2f}\t{dhs_peaks}\t{dhs_peaks/total_peaks:2f}")
+        print( f"{n}\t{r}\t{total_reads}\t{total_peaks}\t{blacklist_peaks}\t{promoter_peaks}\t{promoter_peaks/total_peaks:.2f}\t{dhs_peaks}\t{dhs_peaks/total_peaks:2f}")
     
 if __name__ == '__main__':
     main()
