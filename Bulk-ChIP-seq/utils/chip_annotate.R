@@ -36,25 +36,7 @@ p1/p2
 
 peakAnno.genes <- as.data.frame(peakAnno)[,c("geneId","ENSEMBL","SYMBOL","GENENAME","distanceToTSS")]
 
-n.10k <- dim(peakAnno.genes[abs(peakAnno.genes$distanceToTSS)<=10000,])[1]
-n.5k <- dim(peakAnno.genes[abs(peakAnno.genes$distanceToTSS)<=5000,])[1]
-n.1k <- dim(peakAnno.genes[abs(peakAnno.genes$distanceToTSS)<=1000,])[1]
-n.100 <- dim(peakAnno.genes[abs(peakAnno.genes$distanceToTSS)<=100,])[1]
-
-d <- data.frame( DAR=c("PSA pos DAR"), D10=c(n.10k), D5=c(n.5k), D1=c(n.1k), D0=c(n.100) )
-
-fig <- plot_ly( d,
-  x = ~DAR,
-  y = ~D10,
-  type = "bar",
-  name = "10Kb distance"
-)
-fig <- fig %>% add_trace( y = ~D5, name = "5Kb distance")
-fig <- fig %>% add_trace( y = ~D1, name = "1Kb distance")
-fig <- fig %>% add_trace( y = ~D0, name = "100b distance")
-fig <- fig %>% layout(yaxis = list(title = 'Count'), barmode = 'group')
-fig
-
+peakAnno.genes.10k <- peakAnno.genes[abs(peakAnno.genes$distanceToTSS)<=10000,]
 
 # GO/ other association studies
 
@@ -103,9 +85,9 @@ kegggene <- read.gmt(kegggmtfile)
 cpgmtfile <- paste0(gmtfolder, "/c2.cp.entrez.gmt")
 cpgene <- read.gmt(cpgmtfile)
 
-# Curated All
-c2gmtfile <- paste0(gmtfolder, "/c2.all.entrez.gmt")
-curatedgene <- read.gmt(c2gmtfile)
+## Curated All
+#c2gmtfile <- paste0(gmtfolder, "/c2.all.entrez.gmt")
+#curatedgene <- read.gmt(c2gmtfile)
 
 # cutoff
 pvalueCutoff = 0.05
@@ -115,49 +97,49 @@ maxGSSize = 500
 qvalueCutoff = 0.2
 
 # hallmark
-hallmark <- enricher(as.data.frame(peakAnno)$geneId, TERM2GENE = hgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
+hallmark <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = hgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
 if ( dim(hallmark)[1] > 0 ) {
     dotplot(hallmark, title = "MSigDB Hallmark")
 }
 
 # The GO geneset Biology Process signatures
-bp <- enricher(as.data.frame(peakAnno)$geneId, TERM2GENE = bpgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
+bp <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = bpgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
 if ( dim(bp)[1] > 0 ) {
     dotplot(bp, title = "MSigDB GO BP")
 }
 
 # The Human Phenotype Ontology signatures
-hpo <- enricher(as.data.frame(peakAnno)$geneId, TERM2GENE = hpogene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
+hpo <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = hpogene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
 if ( dim(hpo)[1] > 0 ) {
     dotplot(hpo, title = "MSigDB Human Phenotype Ontology")
 }
 
 # Oncogenic
-onco <- enricher(as.data.frame(peakAnno)$geneId, TERM2GENE = oncogene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
+onco <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = oncogene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
 if ( dim(onco)[1] > 0 ) {
     dotplot(onco, title = "MSigDB Oncogenic")
 }
 
 # The ImmuneSigDB  signatures
-im <- enricher(as.data.frame(peakAnno)$geneId, TERM2GENE = imgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
+im <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = imgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
 if ( dim(im)[1] > 0 ) {
     dotplot(im, title = "MSigDB ImmuneSigDB")
 }
 
 # The TF targets signatures
-tft <- enricher(as.data.frame(peakAnno)$geneId, TERM2GENE = tftgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
+tft <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = tftgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
 if ( dim(tft)[1] > 0 ) {
     dotplot(tft, title = "MSigDB TF targets")
 }
 
 # The Reactome Pathways
-rp <- enricher(as.data.frame(peakAnno)$geneId, TERM2GENE = rpgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
+rp <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = rpgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
 if ( dim(rp)[1] > 0 ) {
     dotplot(rp, title = "MSigDB Reactome Pathways")
 }
 
 # The WikiPathways signatures
-wp <- enricher(as.data.frame(peakAnno)$geneId, TERM2GENE = wpgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
+wp <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = wpgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
 if ( dim(wp)[1] > 0 ) {
     rownames(wp@result) <- gsub(wp@result$ID, pattern = "%.*$", replacement = "")
     wp@result$ID <- gsub(wp@result$ID, pattern = "%.*$", replacement = "")
@@ -166,21 +148,21 @@ if ( dim(wp)[1] > 0 ) {
 }
 
 # The BioCarta Pathways
-bc <- enricher(as.data.frame(peakAnno)$geneId, TERM2GENE = bcgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
+bc <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = bcgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
 if ( dim(bc)[1] > 0 ) {
     dotplot(bc, title = "MSigDB BioCarta")
 }
 
 # The KEGG Pathways
-kegg <- enricher(as.data.frame(peakAnno)$geneId, TERM2GENE = kegggene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
+kegg <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = kegggene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
 if ( dim(kegg)[1] > 0 ) {
-    dotplot(kegg, title = "MSigDB BioCarta")
+    dotplot(kegg, title = "MSigDB KEGG")
 }
 
-# Curated all
-curated <- enricher(as.data.frame(peakAnno)$geneId, TERM2GENE = curatedgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
-if ( dim(curated)[1] > 0 ) {
-    dotplot(curated, title = "MSigDB Curated All")
-}
+## Curated all
+#curated <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = curatedgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
+#if ( dim(curated)[1] > 0 ) {
+#    dotplot(curated, title = "MSigDB Curated All")
+#}
 
 dev.off()
