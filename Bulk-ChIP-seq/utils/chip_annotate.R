@@ -29,7 +29,7 @@ peakAnno <- annotatePeak( pfile, tssRegion=c(-3000, 3000), TxDb=TxDb.Hsapiens.UC
 pdf( paste0(pfile,"_chip_annotation.pdf"), width=10, height=8 )
 plotAnnoBar(peakAnno) + ggtitle("Distribution of Genomics Features")
 
-plotDistToTSS(peakAnno.up, title="Distribution of peaks relative to TSS")
+plotDistToTSS(peakAnno, title="Distribution of peaks relative to TSS")
 
 peakAnno.genes <- as.data.frame(peakAnno)[,c("geneId","ENSEMBL","SYMBOL","GENENAME","distanceToTSS")]
 
