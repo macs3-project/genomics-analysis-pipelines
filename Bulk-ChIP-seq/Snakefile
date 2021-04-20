@@ -60,7 +60,7 @@ BIGWIG_SPMR   = expand("%s/Analysis/{sample}_t_spmr.bw" % (OUT_DIR), sample=tnam
 SEQ_STAT_T = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=tnames)
 SEQ_STAT_C = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=cnames)
 PEAK_STAT= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=tnames)
-PEAK_ANNO= expand("%s/Analysis/{name}_peaks.narrowPeak_chip_annotation.pdf" % (OUT_DIR), sample=tnames)
+PEAK_ANNO= expand("%s/Analysis/{sample}_peaks.narrowPeak_chip_annotation.pdf" % (OUT_DIR), sample=tnames)
 #BIN_COUNT = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=tnames)
 
 # combined files
