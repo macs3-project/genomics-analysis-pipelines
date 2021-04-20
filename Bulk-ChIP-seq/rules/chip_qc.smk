@@ -101,7 +101,7 @@ rule chip_plot_gss:
         mat = GSSMAT,
         heatmap = GSSHEATMAP,
         profile = GSSPROFILE,
-        gssfile = temp("{OUT_DIR}/Alignment/gss.bed"),
+	gssfile = temp(config["outprefix"] + "_Result/Alignment/gss.bed"),
     params:
         gtf = config["annotation"]["geneGTF"],
         bwlist = " ".join( BIGWIG_SPMR),
