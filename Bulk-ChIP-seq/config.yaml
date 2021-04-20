@@ -66,4 +66,5 @@ annotation:
   CEASlib: /path/to/db/genome/GRCh38/GRCh38.refGene
   # gene annotation in GTF
   geneGTF: /path/to/db/genome/GRCh38/gencode.v22.annotation.gtf
-
+  # GMT files for functional annotation
+  GMT: /path/to/db/MSigDB_gmt_files

@@ -28,6 +28,12 @@ dependencies:
 - ucsc-bedclip
 - bioconductor-seqlogo>=1.46.0
 - homer>=4.7
+- bioconductor-chipseeker
+- bioconductor-clusterprofiler
+- bioconductor-txdb.hsapiens.ucsc.hg38.knowngene
+- bioconductor-org.hs.eg.db
+- bioconductor-go.db
+- bioconductor-do.db
 
 # misc plotting
 - r-ggplot2 
