@@ -101,7 +101,7 @@ cpgmtfile <- paste0(gmtfolder, "/c2.cp.entrez.gmt")
 cpgene <- read.gmt(cpgmtfile)
 
 # Curated All
-c2gmtfile <- paste0(gmtfolder, "/c2.entrez.gmt")
+c2gmtfile <- paste0(gmtfolder, "/c2.all.entrez.gmt")
 curatedgene <- read.gmt(c2gmtfile)
 
 # cutoff
