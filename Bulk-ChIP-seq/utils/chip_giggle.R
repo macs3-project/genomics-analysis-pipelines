@@ -26,7 +26,8 @@ RunGiggle <- function(peakbed, giggle.exec, giggle.path, organism, antFile){
   resultDf <- read.table(paste0(outputBed, ".result.xls"), sep="\t", row.names=NULL, comment.char="", stringsAsFactors =  FALSE)
   resultDf <- resultDf[,-9]
   colnames(resultDf) <- c("file", "file_size", "overlaps", "odds_ratio", "fishers_two_tail", "fishers_left_tail", "fishers_right_tail", "combo_score")
-  resultDf <- resultDf[resultDf$overlaps>0,]
+  resultDf <- resultDf[resultDf$overlaps>0,] #at least some overlap
+  resultDf <- resultDf[resultDf$"odds_ratio">1,] # at least some enrichment over random
   rownames(resultDf) <- sapply(strsplit(resultDf$file, "/"), function(x) return(gsub("_5foldPeak.bed.gz", "", rev(x)[1])))
   resultDf <- resultDf[,c("file_size", "overlaps", "combo_score", "odds_ratio", "fishers_right_tail")]
   targetDf <- merge(resultDf, antFile, by.x=0, by.y=0)
