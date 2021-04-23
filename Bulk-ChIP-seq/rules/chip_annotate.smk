@@ -20,3 +20,22 @@ rule chip_giggle_cistrome:
         gigglepath = config["annotation"]["giggledb"],
     shell:
         "utils/chip_giggle.R {input.peak} {params.giggleexec} {params.gigglepath};"
+
+# homer
+rule chip_homer:
+    input:
+        peak = "{OUT_DIR}/Analysis/{name}_peaks.narrowPeak",
+    output:
+        peaktop500 = temp("{OUT_DIR}/Analysis/{name}_peaks.narrowPeak.top500.bed"),
+        homeroutput = temp("{OUT_DIR}/Analysis/{name}_HOMER"),
+        homeroutputgz = "{OUT_DIR}/Analysis/{name}_HOMER.tar.gz",
+    params:
+        giggleexec = config["annotation"]["giggle"],
+        gigglepath = config["annotation"]["giggledb"],
+    threads:
+	config["options"]["cores"]
+    shell:
+        "sort -k5nr {input.peak} | head -500 > {output.peaktop500};"
+        "findMotifsGenome.pl {output.peaktop500} hg38 {homeroutput} -size given -mask -p {threads};"
+	"tar -zcf {homeroutputgz} {homeroutput}"
+	
