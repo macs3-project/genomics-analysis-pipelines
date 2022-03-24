@@ -1,0 +1,463 @@
+---
+title: "RNAseq Differential Expression Analysis"
+author: "Department of Biostat and Bioinfo"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float: true
+    df_print: paged
+---
+
+```{r configuration, include = FALSE}
+metafilename <- "sample.txt"
+rsemfoldername <- "RSEM/Gene_Level"
+summaryfoldername <- "SUM"
+geneinforfilename <- "gencode.vM28.annotation.gene.info"
+MSigDBfoldername <- "MSigDB_Mouse/"
+condition1name <- "WT" 
+condition2name <- "Doxo"
+# cutoff settings
+cutoff.FDR <- 0.05
+cutoff.log2FC <- 1
+```
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = F, warning = F, dev="CairoPNG", dpi=150)
+
+library(tximport)
+library(DESeq2)
+library(DEGreport)
+library(ggplot2)
+library(patchwork)
+library(pcaExplorer)
+library(BiocParallel)
+library(RColorBrewer)
+library(pheatmap)
+library(scales)
+library(ggrepel)
+library(dplyr)
+library(tidyverse)
+library(clusterProfiler)
+library(plotly)
+library(enrichplot)
+library(EnhancedVolcano)
+library(org.Mm.eg.db)
+library(data.table)
+#
+library(ggnewscale)
+library(MatchIt)
+library(reshape2)
+library(DT)
+library(readxl)
+library(pathview)
+#
+register(MulticoreParam(4))
+options(stringsAsFactors=FALSE)
+options(DT.warn.size=FALSE)
+
+gseanalysis <- function (genes, gset2gene, label="", qvalueCutoff=0.2, seed=12345, minGSSize=10, maxGSSize=200 ) {
+    d <- genes[,c("id","log2FoldChange")]
+    d$id <- gsub("\\.\\d+","",d$id)
+    rownames(d) <- d$id
+    mapping <- bitr(rownames(d), fromType="ENSEMBL", toType="ENTREZID", OrgDb="org.Mm.eg.db", drop=T) 
+    mapping$log2FoldChange <- d[mapping$ENSEMBL,"log2FoldChange"]
+    geneList <- mapping[,"log2FoldChange"] # extract lfc
+    names(geneList) <- mapping[,"ENTREZID"]
+    geneList <- sort(geneList, decreasing = TRUE)
+    en.gsea <- GSEA(geneList, TERM2GENE = gset2gene, verbose=FALSE, pAdjustMethod="BH", pvalueCutoff=qvalueCutoff, seed=seed,minGSSize=minGSSize, maxGSSize=maxGSSize) # main function
+    en.gsea <- setReadable(en.gsea, org.Mm.eg.db, keyType = "ENTREZID")
+    
+    if ( length(en.gsea@result$ID) > 0 ) {
+        n <- min(length(en.gsea@result$ID), 10)
+    	  write.table(en.gsea, file=paste0("Results/","en.gsea.",label,".tsv"), sep = "\t")
+        p <- dotplot(en.gsea, showCategory=n, font.size = 8) + ggtitle("dotplot for GSEA")
+        ggsave(plot=p, file=paste0("Results/", "en.gsea.",label,".dotplot.png"), height=10, width=8)
+	      #p <- ridgeplot(en.gsea) + ggtitle("ridgeplot for GSEA")
+	      #ggsave(plot=p, file=paste0("en.gsea.",label,".ridgeplot.png"), height=10, width=8)
+        p <- gseaplot2(en.gsea, geneSetID = 1:n) + ggtitle("gseaplot for GSEA")
+	      ggsave(plot=p, file=paste0("Results/","en.gsea.",label,".gseaplot.png"), height=8, width=12)
+	      return(en.gsea)
+    }
+}
+
+hgmtfile <- paste0(MSigDBfoldername,"mh.all.v0.2.entrez.gmt")   # hallmark gene sets
+h2gene <- read.gmt(hgmtfile)
+
+m2gmtfile <- paste0(MSigDBfoldername,"m2.all.v0.2.entrez.gmt")  # Curated gene sets
+m2gene <- read.gmt(m2gmtfile)
+
+gogmtfile <- paste0(MSigDBfoldername,"m5.all.v0.2.entrez.gmt")  # GO gene sets
+gogene <- read.gmt(gogmtfile)
+
+contrast.name <- paste0(condition2name, ".vs.",condition1name)
+``` 
+
+
+
+```{r readdata}
+## Species: Mouse
+## Library: mRNA
+
+ensembl2entrez <- as.list(org.Mm.egENSEMBL2EG)
+
+# build meta information
+meta<-read.table(metafilename,sep="\t",head=T,check.names=F) #sample,group,replicate
+files<-list.files(rsemfoldername,".results",recursive=T, full.names=T)
+names(files) <- sub(".results","",basename(files))
+
+# colData
+colData <- merge(meta, files, by.x=1, by.y=0, sort=F)
+rownames(colData) <- colData[,1] 
+colData<-colData[,-1]
+colData$Replicate <- as.factor(colData$Replicate)
+colData$Group <- as.factor(colData$Group)
+```
+
+
+```{r readsummary}
+sum.file.path <- list.files(path=summaryfoldername, pattern = ".summary.txt", recursive = T, full.names = T)
+
+length.list <- length(sum.file.path)
+sum.df <- lapply(sum.file.path, 
+                        function(x) (fread(x, 
+                                          sep ="\t", sep2 = "|", 
+                                          skip = 5, fill = T, 
+                                          col.names = c("sample", gsub(".summary.txt", "", basename(x)))) %>%
+                          data.frame(row.names = 1, check.names=FALSE)) ) %>%
+  do.call(what=cbind) %>% mutate_each_(funs (as.numeric(gsub("%","", ., fixed = T))/100), 1:length.list)
+
+sum.df <- sum.df[-c(3,18,23,30),]
+sum.Colname <- gsub(" \\|", "", rownames(sum.df))
+
+rna.summ <- as.data.frame(t(sum.df[,-1]))
+colnames(rna.summ) <- sum.Colname
+rna.summ2<-rna.summ[,c(4,12,13,15,seq(18,28,2))]
+```
+
+# RNA-seq quality
+## Sequencing depth
+
+```{r barplotQCdepth, fig.height=5,fig.width=8}
+un <- rna.summ$`Number of input reads`- rna.summ$`Uniquely mapped reads number`
+m <- rna.summ$`Uniquely mapped reads number`
+rname <- row.names(rna.summ)
+d<-matrix()
+d <- cbind("ALIGNED",m,rname)
+d2 <- cbind("UNALIGNED",un,rname)
+d <- rbind(d,d2)
+d <- as.data.frame(d)
+colnames(d) <- c("variable","value","sample")
+d$value<-as.numeric(d$value)
+ggplot(d,aes(x=sample,y=value,fill=variable))+geom_bar(stat="identity")+ theme(plot.title = element_text(size=11), axis.text.x = element_text(angle = 90, hjust = 1)) + xlab("") + ylab("Basepairs")+labs(fill="") + coord_flip()
+```
+
+
+## RNA-seq Metrics by Picard
+
+```{r boxplotQC, fig.height=8, fig.width=12, warning=FALSE}
+d <- melt(rna.summ2)
+ggplot(d,aes(x=variable,y=value*100,fill=variable))+geom_boxplot(notch = F) + geom_jitter(color="black", size=2, alpha=0.9) + theme(legend.position="none", text=element_text(size=18), axis.text.x = element_text(angle = 90, hjust = 1)) + xlab("") + ylab("Percentage (%)") + coord_flip()
+```
+
+
+# Differential Gene Expression analysis. 
+
+We have `r length(files)` samples in total.
+
+```{r deseq2run, include=FALSE}
+ensembl2entrez<-as.list(org.Mm.egENSEMBL2EG)
+raw <- tximport(files, type="rsem", txIn=FALSE)
+raw$length[raw$length==0] <- 1
+
+# DESeq2
+# filter no expression
+dds<-DESeqDataSetFromTximport(raw, colData=colData, design=~ Group)
+dds<-dds[rowSums(counts(dds))>0, ]
+gene.info<-read.table(geneinforfilename, sep="\t", header = T, col.names=c("id","name","class"))
+gene.info$ensembl <- gsub("\\.\\d+$", "", gene.info$id)
+gene.info$entrez <- as.character(ensembl2entrez[gsub("\\.\\d+$", "", gene.info$id)])
+mcols(dds)<-DataFrame(mcols(dds), gene.info[match(rownames(dds),gene.info$id),])
+dds<-DESeq(dds, parallel=T)
+
+counts.data <- counts(dds, normalized=TRUE)
+rld<-rlog(dds, blind=FALSE)
+vsd<-varianceStabilizingTransformation(dds, blind=FALSE)
+# vsd.auto<-varianceStabilizingTransformation(dds.auto,blind=FALSE)
+```
+
+
+
+## PCA plot
+
+```{r PCA, fig.height=8, fig.width=8}
+plotPCA(vsd, intgroup=c("Group")) + 
+  geom_label_repel(aes(label = rownames(vsd@colData))) + 
+  theme(legend.position = "none") + xlim(-15, 15) + ylim(-10,10)
+```
+
+
+## Correlation heatmap
+
+```{r CorHeatmap, fig.height=6,fig.width=8}
+sampleDists<-dist(t(assay(vsd)))
+sampleDistMatrix<-as.matrix(sampleDists)
+colors<-colorRampPalette(rev(brewer.pal(9,"Blues")))(255)
+pheatmap(sampleDistMatrix,clustering_distance_rows=sampleDists,clustering_distance_cols=sampleDists,col=colors,annotation_row=colData[,"Group",drop=F], show_rownames = F, fontsize_row = 6, clustering_method = "single" )
+```
+
+# compile all data
+
+```{r compilealldata}
+vsd.a <- assay(vsd)
+rownames(gene.info) <- gene.info$id
+vsd.a.r <- rownames(vsd.a)
+vsd.all <- cbind(gene.info[vsd.a.r,], vsd.a)
+write.table(vsd.all, file="Results/alldata.tsv",row.names=FALSE) # 25937 rows
+```
+
+
+# DEG Analysis
+
+```{r deg_qc, ig.height=8,fig.width=12}
+res<-results(dds)
+design <- as.data.frame(colData(dds))
+degQC(counts.data, design$Group, pvalue=res$pvalue)
+```
+
+## Group comparison
+
+### All genes
+```{r finddegs}
+deg.res <- results(dds, contrast = c("Group", condition2name, condition1name))
+m.dds <- mcols(dds)
+deg.genes <- rownames(deg.res)
+
+deg.data <- data.frame(id = deg.genes, 
+                       m.dds[deg.genes, c("ensembl", "entrez","name","class")],
+                       deg.res[deg.genes, c("baseMean","log2FoldChange","pvalue","padj")])
+DT::datatable(deg.data, rownames = F)
+```
+
+### Differential expression gene list
+
+The Differentially Expressed Genes are called in DESeq2, with cutoff FDR `r cutoff.FDR` and minimum |log2 foldchange| of `r cutoff.log2FC`.
+
+```{r}
+e <- deg.data %>% arrange(padj) %>% filter(padj<=cutoff.FDR) %>% filter(abs(log2FoldChange)>=cutoff.log2FC)
+DT::datatable(e, rownames = F)
+write.table(deg.data, file=paste0("Results/", contrast.name,".genes.all.tsv"),row.names = F)
+write.table(e,  file=paste0("Results/", contrast.name,".genes.passed.tsv"),row.names = F)
+```
+
+
+### Up-regulated genes
+
+```{r}
+e.up <- e %>% filter(log2FoldChange>0)
+DT::datatable(e.up, rownames = F)
+```
+
+### Down-regulated genes
+
+```{r}
+e.down <- e %>% filter(log2FoldChange<0)
+DT::datatable(e.down, rownames = F)
+
+write.table((e %>% filter(log2FoldChange>0))$name, 
+            file=paste0("Results/", contrast.name,".deg.data.up.genenames.txt"),row.names=F,col.names = F, quote = F) 
+write.table((e %>% filter(log2FoldChange<0))$name,
+            file=paste0("Results/", contrast.name,".deg.data.down.genenames.txt"),row.names=F,col.names = F, quote = F) 
+```
+
+## MA-plot
+```{r fig.height=8, fig.width=12}
+plot(log10(deg.res$baseMean),deg.res$log2FoldChange,pch=20,cex=1,ylab=paste0("log2 foldchange(",condition2name, "/", condition1name, ")"),xlab="log10(mean)",col="#BBBBBB14")
+legend("bottomleft",c("Up","Down"),col=c(muted("blue"),muted("red")),pch=c(20,20))
+points(log10(e.up$baseMean),e.up$log2FoldChange,col=muted("blue"),pch=20,cex=1,)
+points(log10(e.down$baseMean),e.down$log2FoldChange,col=muted("red"),pch=20,cex=1,)
+abline(h=0)
+```
+
+## Volcano plot
+
+```{r fig.height=8, fig.width=12}
+options(ggrepel.max.overlaps = Inf)
+topgenes.for.plot <- (e %>% filter(class=="protein_coding") %>% filter(padj<=1e-10) %>% 
+                        top_n(20, wt = abs(log2FoldChange) ))$name
+
+EnhancedVolcano(deg.data,
+                 lab = deg.data$name,
+                 x = 'log2FoldChange',
+                 y = 'padj',
+                 selectLab = topgenes.for.plot,        #selected_genes$geneSymbol,
+                 xlab = bquote(~Log[2]~ 'fold change'),
+                 ylab = bquote(~-Log[10]~ 'FDR'),
+                 pCutoff = cutoff.FDR,
+                 FCcutoff = cutoff.log2FC,
+                 pointSize = 2.0,
+                 labSize = 3.0,
+                 labCol = 'black',
+                 labFace = 'bold',
+                 boxedLabels = FALSE,
+                 colAlpha = 0.5,
+                 legendPosition = 'right',
+                 legendLabSize = 10,
+                 legendIconSize = 4.0,
+                 drawConnectors = TRUE,
+                 widthConnectors = 0.2,
+                 colConnectors = 'black') + xlim(-15,15) + theme(axis.text.x=element_text(size=10,face="bold"), axis.text.y=element_text(size=10,face="bold"), axis.title=element_text(size=12,face="bold"))
+```
+
+
+# MSigDB Pathway analysis
+## GSEA
+
+```{r}
+if ( ! dir.exists("Results")) { dir.create("Results")}
+p.h  <- gseanalysis( deg.data, h2gene, paste0( contrast.name,".hallmark" ), qvalueCutoff = 0.5 )
+p.c2 <- gseanalysis( deg.data, m2gene, paste0( contrast.name,".curated" ), qvalueCutoff = 0.5 )
+p.go <- gseanalysis( deg.data, gogene, paste0( contrast.name,".oncology" ), qvalueCutoff = 0.5 )
+
+
+p.hallmark <- gseaplot2(p.h, geneSetID = 1:5, pvalue_table = T) + ggtitle("GSEA: Top5 hallmarks")
+p.curated <- gseaplot2(p.c2, geneSetID = 1:5, pvalue_table = T) + ggtitle("GSEA: Top5 curated")
+p.oncology <- gseaplot2(p.go, geneSetID = 1:5 , pvalue_table = T) + ggtitle("GSEA: Top5 Oncology")
+
+```
+
+```{r fig.height=6, fig.width=12}
+
+p.hallmark
+p.curated
+p.oncology
+
+```
+
+# Gene function Over-Representation analysis 
+
+```{r make_bg}
+backM <- c()
+
+## prepare data frame for matching, sign indicates wheather
+## the gene is differentially expressed or not
+df <- data.frame( sign=as.numeric( rownames(deg.res)  %in% as.character(rownames(e))),res["baseMean"])
+df$baseMean <- round( df$baseMean, 0)
+
+## repeat matching multiple times since
+## each differentially expressed gene is
+## matched by exactly one non-expressed gene
+
+for( i in 1:5 ){
+  mm <- matchit( sign ~ baseMean, df, method="nearest", distance="mahalanobis")
+  backM <- c(backM, mm$match.matrix[,1])
+  df <- df[which(!rownames(df) %in% backM),]
+}
+
+backM <- unique( na.exclude(backM) )
+backM.data <- deg.data[backM, c("ensembl","entrez","name","log2FoldChange")]
+
+id.all <- e$log2FoldChange
+names(id.all) <- e$ensembl
+id.all.ensembl <- names(id.all)
+id.all.entrez <- bitr(id.all.ensembl, fromType="ENSEMBL", toType=c("ENTREZID"), OrgDb="org.Mm.eg.db")$ENTREZ
+
+id.up <- e.up$log2FoldChange
+names(id.up) <- e.up$ensembl
+id.up.ensembl <- names(id.up)
+id.up.entrez <- bitr(id.up.ensembl, fromType="ENSEMBL", toType=c("ENTREZID"), OrgDb="org.Mm.eg.db")$ENTREZ
+
+id.down <- e.down$log2FoldChange
+names(id.down) <- e.down$ensembl
+id.down.ensembl <- names(id.down)
+id.down.entrez <- bitr(id.down.ensembl, fromType="ENSEMBL", toType=c("ENTREZID"), OrgDb="org.Mm.eg.db")$ENTREZ
+
+```
+
+## GO term analysis
+
+### GO term analysis for all differentially expressed genes
+
+```{r cp0}
+go.all <- enrichGO(id.all.ensembl, c(id.all.ensembl, backM.data$ensembl),OrgDb = org.Mm.eg.db, keyType = "ENSEMBL", ont="BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, qvalueCutoff = 0.2, readable=T)
+if ( dim(head(go.all))[1] >0 ) {
+  go.all <- pairwise_termsim(go.all)
+  go.all <- simplify(go.all, cutoff=0.7, by="p.adjust", select_fun=min)
+  DT::datatable(head(go.all,10)[,c("ID","Description","GeneRatio","BgRatio","pvalue","qvalue")], caption="Top 10 GO:BP terms by ClusterProfiler")
+}
+```
+
+```{r cp0.draw, fig.height=12, fig.width=16}
+if ( dim(head(go.all))[1] >0 ) {
+  p1 <- treeplot(go.all)
+  p2 <- mutate(go.all, qscore = -log(p.adjust, base=10)) %>% 
+               barplot(x="qscore")
+  p1 / p2
+}
+```
+
+### GO term analysis for upregulated genes
+
+```{r cp1}
+go.up <- enrichGO(id.up.ensembl, c(id.up.ensembl, backM.data$ensembl),OrgDb = org.Mm.eg.db, keyType = "ENSEMBL", ont="BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, qvalueCutoff = 0.2, readable=T)
+if ( dim(head(go.up))[1] >0 ) {
+  go.up <- pairwise_termsim(go.up)
+  go.up <- simplify(go.up, cutoff=0.7, by="p.adjust", select_fun=min)
+  DT::datatable(head(go.up,10)[,c("ID","Description","GeneRatio","BgRatio","pvalue","qvalue")], caption="Top 10 GO:BP terms by ClusterProfiler")
+}
+```
+
+```{r cp1.draw, fig.height=12, fig.width=16}
+if ( dim(head(go.up))[1] >0 ) {
+  p1 <- treeplot(go.up)
+  p2 <- mutate(go.up, qscore = -log(p.adjust, base=10)) %>% 
+               barplot(x="qscore")
+  p1 / p2
+}
+```
+### GO term analysis for downregulated genes
+
+```{r cp2}
+go.down <- enrichGO(id.down.ensembl, c(id.down.ensembl, backM.data$ensembl),OrgDb = org.Mm.eg.db, keyType = "ENSEMBL", ont="BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, qvalueCutoff = 0.2, readable=T)
+if ( dim(head(go.down))[1] >0 ) {
+  go.down <- pairwise_termsim(go.down)
+  go.down <- simplify(go.down, cutoff=0.7, by="p.adjust", select_fun=min)
+  DT::datatable(head(go.down,10)[,c("ID","Description","GeneRatio","BgRatio","pvalue","qvalue")], caption="Top 10 GO:BP terms by ClusterProfiler")
+}
+```
+
+```{r cp2.draw, fig.height=12, fig.width=16}
+if ( dim(head(go.down))[1] >0 ) {
+  p1 <- treeplot(go.down)
+  p2 <- mutate(go.down, qscore = -log(p.adjust, base=10)) %>% 
+               barplot(x="qscore")
+  p1 / p2
+}
+```
+
+## KEGG analysis
+
+### KEGG analysis for all differentially expressed genes
+
+```{r kegg0}
+kegg.all <- enrichKEGG(id.all.entrez, c(id.all.entrez, backM.data$entrez),organism="mmu", pAdjustMethod = "BH", pvalueCutoff = 0.05, qvalueCutoff = 0.2, keyType="kegg")
+if ( length(kegg.all$ID) > 0 ) {
+  DT::datatable(head(kegg.all,10)[,c("ID","Description","GeneRatio","BgRatio","pvalue","qvalue")], caption="Top 10 KEGG pathways by ClusterProfiler")
+}
+```
+
+```{r kegg0.draw, fig.width=16}
+v <- deg.data$log2FoldChange
+names(v) <- deg.data$ensembl
+for ( keggid in kegg.all$ID ) {
+  keggpathview <- pathview(gene.data  = v, pathway.id = keggid, gene.idtype="ENSEMBL", species    = "mmu" , limit=list(gene=2, cpd=1) )
+  keggpathview.filename <- paste0("./",keggid,".pathview.png")
+  #knitr::include_graphics(keggpathview.filename)
+}
+# Here we should try to run the above commands then decide which figures to include in knitr.
+#knitr::include_graphics("./mmu04061.pathview.png")
+#knitr::include_graphics("./mmu05146.pathview.png")
+#knitr::include_graphics("./mmu05200.pathview.png")
+```
