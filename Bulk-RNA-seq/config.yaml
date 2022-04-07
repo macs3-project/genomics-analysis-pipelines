@@ -1,0 +1,38 @@
+outprefix: NAME
+
+# raw data location
+fastqdir: Raw_file_path/
+
+# sample name for condition 1
+sample1: Cond1
+
+# sample name for condition 2
+sample2: Cond2
+
+# sample raw filename prefix for condition 1, fastq files in fastqdir should be NAME_R1.fastq.gz and NAME_R2.fastq.gz
+sample1fileprefix: [ Cond1_rep1, Cond1_rep2, Cond1_rep3, Cond1_rep4 ]
+# sample raw filename prefix for condition 2, fastq files in fastqdir should be NAME_R1.fastq.gz and NAME_R2.fastq.gz
+sample2fileprefix: [ Cond2_rep1, Cond2_rep2, Cond2_rep3, Cond2_rep4 ]
+
+options:
+  # options for the analysis
+  # mapping for paired-end or not, choose Y or N
+  paired: Y
+
+  stranded: N
+  # aligner
+  # Currently, we only support STAR
+  mapper: STAR
+  # species: either hs for human or mm for mouse
+  species: mm
+  # qualification of expression
+  counter: rsem
+  # number of cores to use
+  cores: 2
+  
+genome:
+  # Genome index for STAR
+  starindex: /projects/rpci/tliu4/db/RNA-seq-db/GRCm39_GencodeM28/STAR.2.7.10a
+  # Genome index for RSEM
+  rsemindex: /projects/rpci/tliu4/db/RNA-seq-db/GRCm39_GencodeM28/RSEM.1.3.1/RSEM.1.3.1
+

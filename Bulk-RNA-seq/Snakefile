@@ -1,0 +1,127 @@
+"""
+Bulk RNA-seq analysis pipeline.
+"""
+
+configfile: "config.yaml"
+
+import yaml
+import sys
+import os
+
+CUR_DIR = os.path.abspath('.')
+
+# output directory
+OUT_DIR = os.path.join( CUR_DIR, config["outprefix"] + "_Result" )
+
+# file prefix
+sample1_files = config["sample1fileprefix"]
+sample2_files = config["sample2fileprefix"]
+
+# number of replicates for sample1 and sample2 conditions
+n_sample1 = len( sample1_files )
+n_sample2 = len( sample2_files )
+sample1_names = [ "%s_r%d" % (config["sample1"],x) for x in range( 1, n_sample1 + 1 ) ]
+sample2_names = [ "%s_r%d" % (config["sample2"],x) for x in range( 1, n_sample2 + 1 ) ]
+
+# make a dictionary to match name to actual raw file prefix
+sample_dict_list = list( zip( sample1_names, sample1_files ) )
+sample_dict_list.extend( list( zip( sample2_names, sample2_files ) ) )
+sample_dict = dict( sample_dict_list )
+
+# make links
+
+if not os.path.exists( OUT_DIR ):
+    os.mkdir( OUT_DIR )
+
+if not os.path.exists( OUT_DIR + "/Raw" ):
+    os.mkdir( OUT_DIR + "/Raw" )
+
+for p in sample_dict_list:
+    src = os.path.abspath( config["fastqdir"] + "/" + p[1]+"_R1.fastq.gz" )
+    tgt = OUT_DIR + "/Raw/" + p[0]+"_R1.fastq.gz"
+    if not os.path.exists( tgt ):
+        os.symlink( src, tgt )
+    else:
+        if os.path.realpath(src) != os.path.realpath(tgt):
+            os.remove( tgt )
+    src = os.path.abspath( config["fastqdir"] + "/" + p[1]+"_R2.fastq.gz" )
+    tgt = OUT_DIR + "/Raw/" + p[0]+"_R2.fastq.gz"
+    if not os.path.exists( tgt ):
+        os.symlink( src, tgt )
+    else:
+        if os.path.realpath(src) != os.path.realpath(tgt):
+            os.remove( tgt )
+
+# individual sample
+ALIGNMENTBAM1 = expand("%s/Alignment/{sample}.genome.bam" % (OUT_DIR), sample=sample1_names)
+ALIGNMENTBAM2 = expand("%s/Alignment/{sample}.genome.bam" % (OUT_DIR), sample=sample2_names)
+TRANSCRIPTOMEBAM1 = expand("%s/Alignment/{sample}.transcriptome.bam" % (OUT_DIR), sample=sample1_names)
+TRANSCRIPTOMEBAM2 = expand("%s/Alignment/{sample}.transcriptome.bam" % (OUT_DIR), sample=sample2_names)
+ALIGNMENTQC1 = expand( "%s/QC/{sample}.STAR.txt" % (OUT_DIR), sample=sample1_names )
+ALIGNMENTQC2 = expand( "%s/QC/{sample}.STAR.txt" % (OUT_DIR), sample=sample2_names )
+QUANTGENE1 = expand("%s/Analysis/{sample}_rsem_gene.txt" % (OUT_DIR), sample=sample1_names)
+QUANTGENE2 = expand("%s/Analysis/{sample}_rsem_gene.txt" % (OUT_DIR), sample=sample2_names)
+QUANTISO1 = expand("%s/Analysis/{sample}_rsem_isoform.txt" % (OUT_DIR), sample=sample1_names)
+QUANTISO2 = expand("%s/Analysis/{sample}_rsem_isoform.txt" % (OUT_DIR), sample=sample2_names)
+
+TARGET = []
+TARGET.extend( ALIGNMENTBAM1 + ALIGNMENTBAM2 + TRANSCRIPTOMEBAM1 + TRANSCRIPTOMEBAM2 + ALIGNMENTQC1 + ALIGNMENTQC2 + QUANTGENE1 + QUANTGENE2 + QUANTISO1 + QUANTISO2 )
+
+# decide certain parameters based on config.yaml
+mapper = config["options"]["mapper"]
+star_cmd = "STAR"
+rsem_cmd = "rsem-calculate-expression"
+
+# STAR parameters: common
+starpar_common=" --genomeDir "+ config["genome"]["starindex"] +"  --outSAMunmapped Within --outFilterType BySJout --outSAMattributes NH HI AS NM MD    --outFilterMultimapNmax 20   --outFilterMismatchNmax 999 --outFilterMismatchNoverReadLmax 0.04   --alignIntronMin 20   --alignIntronMax 1000000   --alignMatesGapMax 1000000 --alignSJoverhangMin 8   --alignSJDBoverhangMin 1 --sjdbScore 1 --readFilesCommand zcat"
+
+# STAR parameters: run-time, controlled by DCC
+starpar_run=" --runThreadN "+ str(config["options"]["cores"])  +" --genomeLoad LoadAndKeep  --limitBAMsortRAM 10000000000"
+
+# STAR parameters: type of BAM output: quantification or sorted BAM or both
+starpar_bam="--outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM"
+
+if config["options"]["stranded"] == "Y":
+    starpar_strand=""
+    starpar_wig="--outWigStrand Stranded"
+else:
+    starpar_strand="--outSAMstrandField intronMotif"
+    starpar_wig="--outWigStrand Unstranded"
+
+# RSEM parameters: common
+rsempar_common="--bam --estimate-rspd  --calc-ci --no-bam-output --seed 12345"
+
+# RSEM parameters: run-time, number of threads and RAM in MB
+rsempar_run=" -p "+ str(config["options"]["cores"]) +" --ci-memory 30000 "
+
+# RSEM parameters: data type dependent
+
+if config["options"]["paired"] == "Y":
+    if config["options"]["stranded"] == "Y":
+        rsempar_type="--paired-end --forward-prob 0"
+    else:
+        rsempar_type="--paired-end"
+else:
+    if config["options"]["stranded"] == "Y":
+        rsempar_type="--forward-prob 0"
+    else:
+        rsempar_type=""
+
+# one line to rule all
+
+rule all:
+    input: TARGET
+
+# ---- all the following rules are common rules for analyzing a single dataset ---
+include: "rules/rna_mapping.smk"
+include: "rules/rna_counting.smk"
+#include: "rules/rna_rsem.smk"
+#include: "rules/atac_peak_annotating.smk"
+#include: "rules/atac_qc.smk"
+
+
+# ---- integrative analysis of all samples ---
+
+#include: "rules/atac_dar.smk"
+#include: "rules/atac_dar_annotating.smk"
+
