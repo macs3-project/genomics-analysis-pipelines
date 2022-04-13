@@ -89,10 +89,11 @@ else:
     starpar_wig="--outWigStrand Unstranded"
 
 # RSEM parameters: common
-rsempar_common="--bam --estimate-rspd  --calc-ci --no-bam-output --seed 12345"
+# Note: I may need to add option for the seed
+rsempar_common="--bam --estimate-rspd --no-bam-output --seed 12345"
 
 # RSEM parameters: run-time, number of threads and RAM in MB
-rsempar_run=" -p "+ str(config["options"]["cores"]) +" --ci-memory 30000 "
+rsempar_run=" -p "+ str(config["options"]["cores"])
 
 # RSEM parameters: data type dependent
 
@@ -114,14 +115,8 @@ rule all:
 
 # ---- all the following rules are common rules for analyzing a single dataset ---
 include: "rules/rna_mapping.smk"
-include: "rules/rna_counting.smk"
-#include: "rules/rna_rsem.smk"
-#include: "rules/atac_peak_annotating.smk"
-#include: "rules/atac_qc.smk"
-
+include: "rules/rna_rsem.smk"
 
 # ---- integrative analysis of all samples ---
-
-#include: "rules/atac_dar.smk"
-#include: "rules/atac_dar_annotating.smk"
+#include: "rules/rna_degreport.smk"
 

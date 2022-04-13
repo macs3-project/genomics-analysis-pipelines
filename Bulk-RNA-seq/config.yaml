@@ -31,8 +31,9 @@ options:
   cores: 2
   
 genome:
-  # Genome index for STAR
-  starindex: /projects/rpci/tliu4/db/RNA-seq-db/GRCm39_GencodeM28/STAR.2.7.10a
-  # Genome index for RSEM
-  rsemindex: /projects/rpci/tliu4/db/RNA-seq-db/GRCm39_GencodeM28/RSEM.1.3.1/RSEM.1.3.1
+  # Genome index directory for STAR
+  starindex: /path/to/STAR_index_directory
+  # Genome index prefix for RSEM, note, this is NOT a directory name
+  # as the option for STAR
+  rsemindex: /path/to/RSEM_index_directory/RSEM_index_prefix
 
