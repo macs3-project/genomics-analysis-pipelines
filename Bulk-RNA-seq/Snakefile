@@ -63,9 +63,21 @@ QUANTGENE1 = expand("%s/Analysis/{sample}_rsem_gene.txt" % (OUT_DIR), sample=sam
 QUANTGENE2 = expand("%s/Analysis/{sample}_rsem_gene.txt" % (OUT_DIR), sample=sample2_names)
 QUANTISO1 = expand("%s/Analysis/{sample}_rsem_isoform.txt" % (OUT_DIR), sample=sample1_names)
 QUANTISO2 = expand("%s/Analysis/{sample}_rsem_isoform.txt" % (OUT_DIR), sample=sample2_names)
+REPORTHTML = "%s/Analysis/report.html" % (OUT_DIR)
 
 TARGET = []
-TARGET.extend( ALIGNMENTBAM1 + ALIGNMENTBAM2 + TRANSCRIPTOMEBAM1 + TRANSCRIPTOMEBAM2 + ALIGNMENTQC1 + ALIGNMENTQC2 + QUANTGENE1 + QUANTGENE2 + QUANTISO1 + QUANTISO2 )
+
+TARGET.extend( ALIGNMENTBAM1 + ALIGNMENTBAM2 + TRANSCRIPTOMEBAM1 + TRANSCRIPTOMEBAM2 + ALIGNMENTQC1 + ALIGNMENTQC2 + QUANTGENE1 + QUANTGENE2 + QUANTISO1 + QUANTISO2 + [ REPORTHTML ] )
+
+SAMPLEFILE = "%s/sample.txt" % (OUT_DIR)
+# write sample information to text file which can be used by DEG analysis
+samplefhd = open(SAMPLEFILE, "wt")
+samplefhd.write("Sample\tGroup\tReplicate\tQC\tGene\tIsoform\n")
+for i in range( n_sample1 ):
+    samplefhd.write( f"{sample1_names[i]}\t{config['sample1']}\t{i}\t\"{ALIGNMENTQC1[i]}\"\t\"{QUANTGENE1[i]}\"\t\"{QUANTISO1[i]}\"\n" )
+for i in range( n_sample2 ):
+    samplefhd.write( f"{sample2_names[i]}\t{config['sample2']}\t{i}\t\"{ALIGNMENTQC2[i]}\"\t\"{QUANTGENE2[i]}\"\t\"{QUANTISO2[i]}\"\n" )
+samplefhd.close()
 
 # decide certain parameters based on config.yaml
 mapper = config["options"]["mapper"]
@@ -89,11 +101,10 @@ else:
     starpar_wig="--outWigStrand Unstranded"
 
 # RSEM parameters: common
-# Note: I may need to add option for the seed
-rsempar_common="--bam --estimate-rspd --no-bam-output --seed 12345"
+rsempar_common="--bam --estimate-rspd  --no-bam-output --seed 12345"
 
 # RSEM parameters: run-time, number of threads and RAM in MB
-rsempar_run=" -p "+ str(config["options"]["cores"])
+rsempar_run=" -p "+ str(config["options"]["cores"]) +" --ci-memory 30000 "
 
 # RSEM parameters: data type dependent
 
@@ -115,8 +126,8 @@ rule all:
 
 # ---- all the following rules are common rules for analyzing a single dataset ---
 include: "rules/rna_mapping.smk"
-include: "rules/rna_rsem.smk"
+include: "rules/rna_counting.smk"
 
 # ---- integrative analysis of all samples ---
-#include: "rules/rna_degreport.smk"
+include: "rules/rna_degreport.smk"
 
