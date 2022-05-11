@@ -669,8 +669,7 @@ although the KEGG pathways are found by using only the DEGs. In
 another word, some genes with great foldchange are not called as DEGs
 probably due to in-significant p-value. 
 
-For some unknown reason, the KEGG figures may not be embeded in the
-HTML report. In this case, please contact us to get the figures.
+Please right-click and open the image in another tab to see details.
 
 ```{r kegg0.draw, fig.width=16}
 v <- deg.data$log2FoldChange
@@ -681,7 +680,9 @@ for ( keggid in kegg.all$ID ) {
   knitr::include_graphics(keggpathview.filename) # this code somehow doesn't work
 }
 # Here we should try to run the above commands then decide which figures to include in knitr.
-#knitr::include_graphics("./mmu04061.pathview.png")
-#knitr::include_graphics("./mmu05146.pathview.png")
-#knitr::include_graphics("./mmu05200.pathview.png")
+
+#https://stackoverflow.com/questions/51268623/insert-images-using-knitrinclude-graphics-in-a-for-loop
+
+keggpvfiles <- list.files(path = './', pattern = "^mmu([[:digit:]]+).pathview.png$", full.names = TRUE)
+knitr::include_graphics(keggpvfiles)
 ```
