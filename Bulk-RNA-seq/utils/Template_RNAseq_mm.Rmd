@@ -135,20 +135,6 @@ colData$Group <- as.factor(colData$Group)
 #sum.file.path <- list.files(path=summaryfoldername, pattern = ".summary.txt", recursive = T, full.names = T)
 sum.file.path <- colData$QC
 length.list <- length(sum.file.path)
-sum.df <- lapply(sum.file.path, 
-                 function(x) (fread(x, 
-                                    sep ="\t", sep2 = "|", 
-                                    skip = 5, fill = T, 
-                                    col.names = c("sample", gsub(".STAR.txt", "", basename(x)))) %>%
-                                    data.frame(row.names = 1, check.names=FALSE)) ) %>%
-           do.call(what=cbind) %>% mutate_each_(funs (as.numeric(gsub("%","", ., fixed = T))/100), 1:length.list)
-
-sum.df <- sum.df[-c(3,18,23,30),]
-sum.Colname <- gsub(" \\|", "", rownames(sum.df))
-
-rna.summ <- as.data.frame(t(sum.df[,-1]))
-colnames(rna.summ) <- sum.Colname
-rna.summ2<-rna.summ[,c(4,12,13,15,seq(18,28,2))]
 
 sum.df <- lapply(sum.file.path, 
                         function(x) (fread(x, 
