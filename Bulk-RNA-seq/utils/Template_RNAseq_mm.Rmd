@@ -494,7 +494,7 @@ n.p.regulatory <- ifelse(!is.null(p.regulatory), length(p.regulatory@result$ID),
 
 if ( n.p.regulatory > 0 ) {
   n <- min(n.p.regulatory, 5) 
-  gseaplot2(p.regulatory, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " canonical pathways"))
+  gseaplot2(p.regulatory, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " regulatory targets"))
 }
 ```
 
