@@ -457,7 +457,8 @@ found under this category.
 ## GSEA Hallmark gene sets
 
 ```{r fig.height=6, fig.width=12}
-n.p.hallmark <- length(p.hallmark@result$ID)
+n.p.hallmark <- ifelse(!is.null(p.hallmark), length(p.hallmark@result$ID), 0 )
+
 if ( n.p.hallmark > 0 ) {
   n <- min(n.p.hallmark, 5) 
   gseaplot2(p.hallmark, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " hallmarks"))
@@ -467,7 +468,8 @@ if ( n.p.hallmark > 0 ) {
 ## GSEA Curated gene sets
 
 ```{r fig.height=6, fig.width=12}
-n.p.curated <- length(p.curated@result$ID)
+n.p.curated <- ifelse(!is.null(p.curated), length(p.curated@result$ID), 0 )
+
 if ( n.p.curated > 0 ) {
   n <- min(n.p.curated, 5) 
   gseaplot2(p.curated, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " curated"))
@@ -477,7 +479,8 @@ if ( n.p.curated > 0 ) {
 ## GSEA Canonical Pathways
 
 ```{r fig.height=6, fig.width=12}
-n.p.canonicalpathways <- length(p.canonicalpathways@result$ID)
+n.p.canonicalpathways <- ifelse(!is.null(p.canonicalpathways), length(p.canonicalpathways@result$ID), 0 )
+
 if ( n.p.canonicalpathways > 0 ) {
   n <- min(n.p.canonicalpathways, 5)
   gseaplot2(p.canonicalpathways, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " canonical pathways"))
@@ -487,7 +490,8 @@ if ( n.p.canonicalpathways > 0 ) {
 ## GSEA Regulatory Targets
 
 ```{r fig.height=6, fig.width=12}
-n.p.regulatory <- length(p.regulatory@result$ID)
+n.p.regulatory <- ifelse(!is.null(p.regulatory), length(p.regulatory@result$ID), 0 )
+
 if ( n.p.regulatory > 0 ) {
   n <- min(n.p.regulatory, 5) 
   gseaplot2(p.regulatory, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " canonical pathways"))
@@ -497,7 +501,8 @@ if ( n.p.regulatory > 0 ) {
 ## GSEA Tumor Ontology gene sets
 
 ```{r fig.height=6, fig.width=12}
-n.p.oncology <- length(p.oncology@result$ID)
+n.p.oncology <- ifelse(!is.null(p.oncology), length(p.oncology@result$ID), 0 )
+
 if ( n.p.oncology > 0 ) {
   n <- min(n.p.oncology, 5) 
   gseaplot2(p.oncology, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " oncology"))
@@ -510,7 +515,8 @@ For better GO term analysis, please check OR analysis based on GO
 terms.
 
 ```{r fig.height=6, fig.width=12}
-n.p.go <- length(p.go@result$ID)
+n.p.go <- ifelse(!is.null(p.go), length(p.go@result$ID), 0 )
+
 if ( n.p.go > 0 ) {
   n <- min(n.p.go, 5) 
   gseaplot2(p.go, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " GO"))
