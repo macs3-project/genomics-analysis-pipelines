@@ -150,7 +150,6 @@ sum.Colname <- gsub(" \\|", "", rownames(sum.df))
 rna.summ <- as.data.frame(t(sum.df))
 colnames(rna.summ) <- sum.Colname
 rna.summ2<-rna.summ[,c(4,12,13,15,seq(18,28,2))]
-rna.summ2 <- rna.summ2 %>% mutate_each_(funs(as.numeric(gsub("%", "", ., fixed = T))), 1:ncol(rna.summ2)) 
 ```
 
 # RNA-seq quality
