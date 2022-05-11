@@ -278,6 +278,7 @@ degQC(counts.data, design$Group, pvalue=res$pvalue)
 ## Differential analysis result of all the genes no matter DEG or not
 
 This master table contains every gene before we apply the cutoffs.
+Comparison is between `r condition2name` versus `r condition1name`.
 
 ```{r}
 deg.res <- results(dds, contrast = c("Group", condition2name, condition1name))
@@ -305,6 +306,8 @@ write.table(e,  file=paste0(contrast.name,".genes.passed.tsv"),row.names = F)
 ```
 
 ### Up-regulated DEGs
+
+‘Up’ means higher expression in `r condition2name`.
 
 ```{r}
 e.up <- e %>% filter(log2FoldChange>0)
