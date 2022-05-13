@@ -8,7 +8,7 @@ genes calling.
 ![DAG of the pipeline](./dag.png)
 
 ## Step1: creating conda environment *da*
-Using environment.yml file, which includes the packages needed, to create a conda environment, named *da*
+Using environment.yml file, which includes the packages needed, to create a conda environment, named *da*.
 And install some other required packages, seperately. e.g. DO.db
 
 ```
