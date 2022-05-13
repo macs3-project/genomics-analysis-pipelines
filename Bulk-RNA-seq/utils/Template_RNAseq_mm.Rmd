@@ -56,7 +56,7 @@ library(DT)
 library(readxl)
 library(pathview)
 #
-register(MulticoreParam(4))
+options(MulticoreParam = MulticoreParam(workers=4))
 options(stringsAsFactors=FALSE)
 options(DT.warn.size=FALSE)
 
