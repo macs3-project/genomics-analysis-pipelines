@@ -65,9 +65,9 @@ QUANTISO1 = expand("%s/Analysis/{sample}_rsem_isoform.txt" % (OUT_DIR), sample=s
 QUANTISO2 = expand("%s/Analysis/{sample}_rsem_isoform.txt" % (OUT_DIR), sample=sample2_names)
 REPORTHTML = "%s/Analysis/report.html" % (OUT_DIR)
 
-TARGET = []
+TARGET = [REPORTHTML]
 
-TARGET.extend( ALIGNMENTBAM1 + ALIGNMENTBAM2 + TRANSCRIPTOMEBAM1 + TRANSCRIPTOMEBAM2 + ALIGNMENTQC1 + ALIGNMENTQC2 + QUANTGENE1 + QUANTGENE2 + QUANTISO1 + QUANTISO2 + [ REPORTHTML ] )
+# TARGET.extend( ALIGNMENTBAM1 + ALIGNMENTBAM2 + TRANSCRIPTOMEBAM1 + TRANSCRIPTOMEBAM2 + ALIGNMENTQC1 + ALIGNMENTQC2 + QUANTGENE1 + QUANTGENE2 + QUANTISO1 + QUANTISO2 + [ REPORTHTML ] )
 
 SAMPLEFILE = "%s/sample.txt" % (OUT_DIR)
 # write sample information to text file which can be used by DEG analysis
