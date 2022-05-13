@@ -1,7 +1,7 @@
-# Generic Pipeline for ChIP-seq analysis using STAR/RSEM/BioC/DESeq2
+# Generic Pipeline for RNA-seq analysis using STAR/RSEM/BioC/DESeq2
 
-Currently two conditions are supported. Including differential
-genes calling.
+Currently two conditions are supported. Including QC metrics, differential
+genes calling, gene set enrichment analysis and KEGG analysis.
 
 ## Visualization of the workflow
 
