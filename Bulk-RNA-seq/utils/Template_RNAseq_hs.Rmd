@@ -46,7 +46,7 @@ library(clusterProfiler)
 library(plotly)
 library(enrichplot)
 library(EnhancedVolcano)
-library(org.Mm.eg.db)
+library(org.Hs.eg.db)
 library(data.table)
 #
 library(ggnewscale)
@@ -56,7 +56,7 @@ library(DT)
 library(readxl)
 library(pathview)
 #
-register(MulticoreParam(4))
+options(MulticoreParam = MulticoreParam(workers=4))
 options(stringsAsFactors=FALSE)
 options(DT.warn.size=FALSE)
 
@@ -64,13 +64,13 @@ gseanalysis <- function (genes, gset2gene, label="", qvalueCutoff=0.2, seed=1234
     d <- genes[,c("id","log2FoldChange")]
     d$id <- gsub("\\.\\d+","",d$id)
     rownames(d) <- d$id
-    mapping <- bitr(rownames(d), fromType="ENSEMBL", toType="ENTREZID", OrgDb="org.Mm.eg.db", drop=T) 
+    mapping <- bitr(rownames(d), fromType="ENSEMBL", toType="ENTREZID", OrgDb="org.Hs.eg.db", drop=T) 
     mapping$log2FoldChange <- d[mapping$ENSEMBL,"log2FoldChange"]
     geneList <- mapping[,"log2FoldChange"] # extract lfc
     names(geneList) <- mapping[,"ENTREZID"]
     geneList <- sort(geneList, decreasing = TRUE)
     en.gsea <- GSEA(geneList, TERM2GENE = gset2gene, verbose=FALSE, pAdjustMethod="BH", pvalueCutoff=qvalueCutoff, seed=seed,minGSSize=minGSSize, maxGSSize=maxGSSize) # main function
-    en.gsea <- setReadable(en.gsea, org.Mm.eg.db, keyType = "ENTREZID")
+    en.gsea <- setReadable(en.gsea, org.Hs.eg.db, keyType = "ENTREZID")
     
     if ( length(en.gsea@result$ID) > 0 ) {
         n <- min(length(en.gsea@result$ID), 10)
@@ -88,23 +88,21 @@ gseanalysis <- function (genes, gset2gene, label="", qvalueCutoff=0.2, seed=1234
 
 ```{r}
 
-hgmtfile <- paste0(MSigDBfoldername,"/mh.all.v0.3.entrez.gmt")   # hallmark gene sets
+hgmtfile <- paste0(MSigDBfoldername,"/h.all.v7.5.1.entrez.gmt")   # hallmark gene sets
 h2gene <- read.gmt(hgmtfile)
 
-cgmtfile <- paste0(MSigDBfoldername,"/m2.all.v0.3.entrez.gmt")  # Curated gene sets
+cgmtfile <- paste0(MSigDBfoldername,"/c2.all.v7.5.1.entrez.gmt")  # Curated gene sets
 c2gene <- read.gmt(cgmtfile)
 
-ccpgmtfile <- paste0(MSigDBfoldername,"/m2.cp.v0.3.entrez.gmt")  # Curated Canonical Pathway gene sets
-ccp2gene <- read.gmt(ccpgmtfile)
-
-ogmtfile <- paste0(MSigDBfoldername,"/m4.all.v0.3.entrez.gmt")  # Oncology gene sets
-o2gene <- read.gmt(ogmtfile)
-
-tgmtfile <- paste0(MSigDBfoldername,"/m3.all.v0.3.entrez.gmt")  # Regulatory target gene sets
+tgmtfile <- paste0(MSigDBfoldername,"/c3.all.v7.5.1.entrez.gmt")  # Regulatory target gene sets
 t2gene <- read.gmt(tgmtfile)
 
-ggmtfile <- paste0(MSigDBfoldername,"/m5.all.v0.3.entrez.gmt")  # GO gene sets
-g2gene <- read.gmt(ggmtfile)
+ongmtfile <- paste0(MSigDBfoldername,"/c5.all.v7.5.1.entrez.gmt")  # ontology gene sets
+on2gene <- read.gmt(tgmtfile)
+
+ogmtfile <- paste0(MSigDBfoldername,"/c6.all.v7.1.entrez.gmt")  # oncogenic signature gene sets
+o2gene <- read.gmt(ogmtfile)
+
 
 # build meta information
 meta<-read.table(metafilename,sep="\t",head=T,check.names=F) #sample,group,replicate,QC, gene, isoform
@@ -118,10 +116,10 @@ contrast.name <- paste0(condition2name, ".vs.",condition1name)
 
 
 ```{r readdata}
-## Species: Mouse
+## Species: Homo Sapien
 ## Library: mRNA
 
-ensembl2entrez <- as.list(org.Mm.egENSEMBL2EG)
+ensembl2entrez <- as.list(org.Hs.egENSEMBL2EG)
 # colData
 colData <- meta
 rownames(colData) <- colData[,1] 
@@ -135,20 +133,6 @@ colData$Group <- as.factor(colData$Group)
 #sum.file.path <- list.files(path=summaryfoldername, pattern = ".summary.txt", recursive = T, full.names = T)
 sum.file.path <- colData$QC
 length.list <- length(sum.file.path)
-sum.df <- lapply(sum.file.path, 
-                 function(x) (fread(x, 
-                                    sep ="\t", sep2 = "|", 
-                                    skip = 5, fill = T, 
-                                    col.names = c("sample", gsub(".STAR.txt", "", basename(x)))) %>%
-                                    data.frame(row.names = 1, check.names=FALSE)) ) %>%
-           do.call(what=cbind) %>% mutate_each_(funs (as.numeric(gsub("%","", ., fixed = T))/100), 1:length.list)
-
-sum.df <- sum.df[-c(3,18,23,30),]
-sum.Colname <- gsub(" \\|", "", rownames(sum.df))
-
-rna.summ <- as.data.frame(t(sum.df[,-1]))
-colnames(rna.summ) <- sum.Colname
-rna.summ2<-rna.summ[,c(4,12,13,15,seq(18,28,2))]
 
 sum.df <- lapply(sum.file.path, 
                         function(x) (fread(x, 
@@ -164,7 +148,6 @@ sum.Colname <- gsub(" \\|", "", rownames(sum.df))
 rna.summ <- as.data.frame(t(sum.df))
 colnames(rna.summ) <- sum.Colname
 rna.summ2<-rna.summ[,c(4,12,13,15,seq(18,28,2))]
-rna.summ2 <- rna.summ2 %>% mutate_each_(funs(as.numeric(gsub("%", "", ., fixed = T))), 1:ncol(rna.summ2)) 
 ```
 
 # RNA-seq quality
@@ -200,7 +183,7 @@ We have `r length(colData$Gene)` samples in total. We will use DESeq2
 to call differentially expressed genes.
 
 ```{r deseq2run, include=FALSE}
-ensembl2entrez<-as.list(org.Mm.egENSEMBL2EG)
+ensembl2entrez<-as.list(org.Hs.egENSEMBL2EG)
 raw <- tximport(colData$Gene, type="rsem", txIn=FALSE)
 raw$length[raw$length==0] <- 1
 
@@ -292,6 +275,7 @@ degQC(counts.data, design$Group, pvalue=res$pvalue)
 ## Differential analysis result of all the genes no matter DEG or not
 
 This master table contains every gene before we apply the cutoffs.
+Comparison is between `r condition2name` versus `r condition1name`.
 
 ```{r}
 deg.res <- results(dds, contrast = c("Group", condition2name, condition1name))
@@ -319,6 +303,8 @@ write.table(e,  file=paste0(contrast.name,".genes.passed.tsv"),row.names = F)
 ```
 
 ### Up-regulated DEGs
+
+‘Up’ means higher expression in `r condition2name`.
 
 ```{r}
 e.up <- e %>% filter(log2FoldChange>0)
@@ -399,54 +385,27 @@ EnhancedVolcano(deg.data,
 
 # Gene set enrichment analysis using MSigDB
 
-We will use the gene sets from MSigDB mouse (DRAFT). Here are the sets we will check:
+We will use the gene sets from MSigDB. Here are the sets we will check:
 
-1. MH: mouse-ortholog hallmark gene sets
+1. H: hallmark gene sets
 
-   These are versions of gene sets in the MSigDB Hallmark collection
-   mapped to their Mouse orthologs.
+Hallmark gene sets summarize and represent specific well-defined biological states or processes and display coherent expression
 
-   Note: Gene sets in MH consist of human genes converted to their mouse
-   orthologs and are not originally sourced from mouse datasets.
+2. C2: curated gene sets
 
-2. M2: curated gene sets
+Gene sets in this collection are curated from various sources, including online pathway databases and the biomedical literature. Many sets are also contributed by individual domain experts. The gene set page for each gene set lists its source
 
-   Gene sets in this collection are curated from various sources,
-   including the Reactome, WikiPathways, and BioCarta pathway databases
-   and also contributed by individual domain experts.
+3. C3: regulatory target gene sets
 
-   1. M2:CP Canonical pathways
+Gene sets representing potential targets of regulation by transcription factors or microRNAs.
 
-      Gene sets from pathway databases. Usually, these gene sets are
-      canonical representations of a biological process compiled by
-      domain experts.
+4. C5: ontology gene sets
 
-      These gene sets consist solely of natively mouse gene sets, and
-      are generated through a procedure identical to their Human
-      MSigDB equivalents.
+Gene sets that contain genes annotated by the same ontology term. 
 
-3. M3: regulatory target gene sets
+5. C6: oncogenic signature gene sets
 
-   Gene sets representing potential targets of regulation by
-   transcription factors or microRNAs. The sets consist of genes
-   grouped by elements they share in their non-protein coding
-   regions. The elements represent known or likely cis-regulatory
-   elements in promoters and 3'-UTRs. The C3 collection is divided
-   into two sub-collections: microRNA targets from miRDB and
-   transcription factor targets from GTRD.  These gene sets consist
-   solely of natively mouse gene sets.
-
-4. M4: Tumor ontology sets
-
-   Gene sets from the MP Tumor ontology resource at MGI.
-
-5. M5: GO gene sets
-
-   Mouse gene sets from the Gene Ontology Consortium
-
-   These gene sets consist solely of natively mouse gene sets, and are
-   generated through a procedure identical to their Human MSigDB
-   equivalents.
+Gene sets that represent signatures of cellular pathways which are often dis-regulated in cancer. 
 
 First, we will use GSEA (gene-set enrichment analysis) to ask which
 gene set is more related to the differential gene expression pattern
@@ -456,13 +415,11 @@ downregulated). We will use adjusted-pvalue of 0.5 as cutoff and show
 at most top 5 gene sets for each of the six categories of genes sets.
 
 ```{r}
-p.hallmark <- gseanalysis( deg.data, h2gene, paste0( contrast.name,".hallmark" ), qvalueCutoff = 0.5 )
-p.curated  <- gseanalysis( deg.data, c2gene, paste0( contrast.name,".curated" ), qvalueCutoff = 0.5 )
-p.canonicalpathways  <- gseanalysis( deg.data, ccp2gene, paste0( contrast.name,".canonicalpathways" ), qvalueCutoff = 0.5 )
-p.regulatory  <- gseanalysis( deg.data, t2gene, paste0( contrast.name,".regulatory" ), qvalueCutoff = 0.5 )
-p.oncology <- gseanalysis( deg.data, o2gene, paste0( contrast.name,".oncology" ), qvalueCutoff = 0.5 )
-p.go       <- gseanalysis( deg.data, g2gene, paste0( contrast.name,".go" ), qvalueCutoff = 0.5 )
-
+p.hallmark   <- gseanalysis( deg.data, h2gene, paste0( contrast.name,".hallmark" ), qvalueCutoff = 0.5 )
+p.curated    <- gseanalysis( deg.data, c2gene, paste0( contrast.name,".curated" ), qvalueCutoff = 0.5 )
+p.regulatory <- gseanalysis( deg.data, t2gene, paste0( contrast.name,".regulatory" ), qvalueCutoff = 0.5 )
+p.ontology   <- gseanalysis( deg.data, on2gene, paste0( contrast.name,".ontology" ), qvalueCutoff = 0.5 )
+p.oncology   <- gseanalysis( deg.data, o2gene, paste0( contrast.name,".oncology" ), qvalueCutoff = 0.5 )
 ```
 
 Note: if there is no figure, it means there is no enriched gene sets
@@ -471,7 +428,8 @@ found under this category.
 ## GSEA Hallmark gene sets
 
 ```{r fig.height=6, fig.width=12}
-n.p.hallmark <- length(p.hallmark@result$ID)
+n.p.hallmark <- ifelse(!is.null(p.hallmark), length(p.hallmark@result$ID), 0 )
+
 if ( n.p.hallmark > 0 ) {
   n <- min(n.p.hallmark, 5) 
   gseaplot2(p.hallmark, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " hallmarks"))
@@ -481,55 +439,51 @@ if ( n.p.hallmark > 0 ) {
 ## GSEA Curated gene sets
 
 ```{r fig.height=6, fig.width=12}
-n.p.curated <- length(p.curated@result$ID)
+n.p.curated <- ifelse(!is.null(p.curated), length(p.curated@result$ID), 0 )
+
 if ( n.p.curated > 0 ) {
   n <- min(n.p.curated, 5) 
   gseaplot2(p.curated, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " curated"))
 }
 ```
 
-## GSEA Canonical Pathways
-
-```{r fig.height=6, fig.width=12}
-n.p.canonicalpathways <- length(p.canonicalpathways@result$ID)
-if ( n.p.canonicalpathways > 0 ) {
-  n <- min(n.p.canonicalpathways, 5)
-  gseaplot2(p.canonicalpathways, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " canonical pathways"))
-}
-```
 
 ## GSEA Regulatory Targets
 
 ```{r fig.height=6, fig.width=12}
-n.p.regulatory <- length(p.regulatory@result$ID)
+n.p.regulatory <- ifelse(!is.null(p.regulatory), length(p.regulatory@result$ID), 0 )
+
 if ( n.p.regulatory > 0 ) {
   n <- min(n.p.regulatory, 5) 
-  gseaplot2(p.regulatory, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " canonical pathways"))
+  gseaplot2(p.regulatory, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " regulatory targets"))
 }
 ```
+
+## GSEA Ontology gene sets
+
+```{r fig.height=6, fig.width=12}
+n.p.ontology <- ifelse(!is.null(p.ontology), length(p.ontology@result$ID), 0 )
+
+if ( n.p.ontology > 0 ) {
+  n <- min(n.p.ontology, 5) 
+  gseaplot2(p.ontology, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " ontology"))
+}
+```
+
+
 
 ## GSEA Tumor Ontology gene sets
 
 ```{r fig.height=6, fig.width=12}
-n.p.oncology <- length(p.oncology@result$ID)
+n.p.oncology <- ifelse(!is.null(p.oncology), length(p.oncology@result$ID), 0 )
+
 if ( n.p.oncology > 0 ) {
   n <- min(n.p.oncology, 5) 
   gseaplot2(p.oncology, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " oncology"))
 }
 ```
 
-## GSEA GO gene sets
 
-For better GO term analysis, please check OR analysis based on GO
-terms.
-
-```{r fig.height=6, fig.width=12}
-n.p.go <- length(p.go@result$ID)
-if ( n.p.go > 0 ) {
-  n <- min(n.p.go, 5) 
-  gseaplot2(p.go, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " GO"))
-}
-```
 
 # Gene function Over-Representation analysis 
 
@@ -569,17 +523,17 @@ backM.data <- deg.data[backM, c("ensembl","entrez","name","log2FoldChange")]
 id.all <- e$log2FoldChange
 names(id.all) <- e$ensembl
 id.all.ensembl <- names(id.all)
-id.all.entrez <- bitr(id.all.ensembl, fromType="ENSEMBL", toType=c("ENTREZID"), OrgDb="org.Mm.eg.db")$ENTREZ
+id.all.entrez <- bitr(id.all.ensembl, fromType="ENSEMBL", toType=c("ENTREZID"), OrgDb="org.Hs.eg.db")$ENTREZ
 
 id.up <- e.up$log2FoldChange
 names(id.up) <- e.up$ensembl
 id.up.ensembl <- names(id.up)
-id.up.entrez <- bitr(id.up.ensembl, fromType="ENSEMBL", toType=c("ENTREZID"), OrgDb="org.Mm.eg.db")$ENTREZ
+id.up.entrez <- bitr(id.up.ensembl, fromType="ENSEMBL", toType=c("ENTREZID"), OrgDb="org.Hs.eg.db")$ENTREZ
 
 id.down <- e.down$log2FoldChange
 names(id.down) <- e.down$ensembl
 id.down.ensembl <- names(id.down)
-id.down.entrez <- bitr(id.down.ensembl, fromType="ENSEMBL", toType=c("ENTREZID"), OrgDb="org.Mm.eg.db")$ENTREZ
+id.down.entrez <- bitr(id.down.ensembl, fromType="ENSEMBL", toType=c("ENTREZID"), OrgDb="org.Hs.eg.db")$ENTREZ
 ```
 
 ## GO term analysis for all differentially expressed genes
@@ -587,7 +541,7 @@ id.down.entrez <- bitr(id.down.ensembl, fromType="ENSEMBL", toType=c("ENTREZID")
 *Enriched terms*
 
 ```{r cp0}
-go.all <- enrichGO(id.all.ensembl, c(id.all.ensembl, backM.data$ensembl),OrgDb = org.Mm.eg.db, keyType = "ENSEMBL", ont="BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, qvalueCutoff = 0.2, readable=T)
+go.all <- enrichGO(id.all.ensembl, c(id.all.ensembl, backM.data$ensembl),OrgDb = org.Hs.eg.db, keyType = "ENSEMBL", ont="BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, qvalueCutoff = 0.2, readable=T)
 if ( dim(head(go.all))[1] >0 ) {
   go.all <- pairwise_termsim(go.all)
   go.all <- simplify(go.all, cutoff=0.7, by="p.adjust", select_fun=min)
@@ -611,7 +565,7 @@ if ( dim(head(go.all))[1] >0 ) {
 *Enriched terms*
 
 ```{r cp1}
-go.up <- enrichGO(id.up.ensembl, c(id.up.ensembl, backM.data$ensembl),OrgDb = org.Mm.eg.db, keyType = "ENSEMBL", ont="BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, qvalueCutoff = 0.2, readable=T)
+go.up <- enrichGO(id.up.ensembl, c(id.up.ensembl, backM.data$ensembl),OrgDb = org.Hs.eg.db, keyType = "ENSEMBL", ont="BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, qvalueCutoff = 0.2, readable=T)
 if ( dim(head(go.up))[1] >0 ) {
   go.up <- pairwise_termsim(go.up)
   go.up <- simplify(go.up, cutoff=0.7, by="p.adjust", select_fun=min)
@@ -635,7 +589,7 @@ if ( dim(head(go.up))[1] >0 ) {
 *Enriched terms*
 
 ```{r cp2}
-go.down <- enrichGO(id.down.ensembl, c(id.down.ensembl, backM.data$ensembl),OrgDb = org.Mm.eg.db, keyType = "ENSEMBL", ont="BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, qvalueCutoff = 0.2, readable=T)
+go.down <- enrichGO(id.down.ensembl, c(id.down.ensembl, backM.data$ensembl),OrgDb = org.Hs.eg.db, keyType = "ENSEMBL", ont="BP", pAdjustMethod = "BH", pvalueCutoff = 0.05, qvalueCutoff = 0.2, readable=T)
 if ( dim(head(go.down))[1] >0 ) {
   go.down <- pairwise_termsim(go.down)
   go.down <- simplify(go.down, cutoff=0.7, by="p.adjust", select_fun=min)
@@ -663,7 +617,7 @@ enriched.
 ## KEGG analysis for all differentially expressed genes
 
 ```{r kegg0}
-kegg.all <- enrichKEGG(id.all.entrez, c(id.all.entrez, backM.data$entrez),organism="mmu", pAdjustMethod = "BH", pvalueCutoff = 0.05, qvalueCutoff = 0.2, keyType="kegg")
+kegg.all <- enrichKEGG(id.all.entrez, c(id.all.entrez, backM.data$entrez), organism="hsa", pAdjustMethod = "BH", pvalueCutoff = 0.05, qvalueCutoff = 0.2, keyType="kegg")
 if ( length(kegg.all$ID) > 0 ) {
   DT::datatable(head(kegg.all,10)[,c("ID","Description","GeneRatio","BgRatio","pvalue","qvalue")], caption="Top 10 KEGG pathways by ClusterProfiler")
 }
@@ -677,19 +631,20 @@ although the KEGG pathways are found by using only the DEGs. In
 another word, some genes with great foldchange are not called as DEGs
 probably due to in-significant p-value. 
 
-For some unknown reason, the KEGG figures may not be embeded in the
-HTML report. In this case, please contact us to get the figures.
+Please right-click and open the image in another tab to see details.
 
 ```{r kegg0.draw, fig.width=16}
 v <- deg.data$log2FoldChange
 names(v) <- deg.data$ensembl
 for ( keggid in kegg.all$ID ) {
-  keggpathview <- pathview(gene.data  = v, pathway.id = keggid, gene.idtype="ENSEMBL", species    = "mmu" , limit=list(gene=2, cpd=1) )
+  keggpathview <- pathview(gene.data  = v, pathway.id = keggid, gene.idtype="ENSEMBL", species = "hsa" , limit=list(gene=2, cpd=1) )
   keggpathview.filename <- paste0("./",keggid,".pathview.png")
   knitr::include_graphics(keggpathview.filename) # this code somehow doesn't work
 }
 # Here we should try to run the above commands then decide which figures to include in knitr.
-#knitr::include_graphics("./mmu04061.pathview.png")
-#knitr::include_graphics("./mmu05146.pathview.png")
-#knitr::include_graphics("./mmu05200.pathview.png")
+
+#https://stackoverflow.com/questions/51268623/insert-images-using-knitrinclude-graphics-in-a-for-loop
+
+keggpvfiles <- list.files(path = './', pattern = "^hsa([[:digit:]]+).pathview.png$", full.names = TRUE)
+knitr::include_graphics(keggpvfiles)
 ```
