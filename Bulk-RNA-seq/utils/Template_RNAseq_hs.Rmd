@@ -100,7 +100,7 @@ t2gene <- read.gmt(tgmtfile)
 ongmtfile <- paste0(MSigDBfoldername,"/c5.all.v7.5.1.entrez.gmt")  # ontology gene sets
 on2gene <- read.gmt(tgmtfile)
 
-ogmtfile <- paste0(MSigDBfoldername,"/c6.all.v7.1.entrez.gmt")  # oncogenic signature gene sets
+ogmtfile <- paste0(MSigDBfoldername,"/c6.all.v7.5.1.entrez.gmt")  # oncogenic signature gene sets
 o2gene <- read.gmt(ogmtfile)
 
 
