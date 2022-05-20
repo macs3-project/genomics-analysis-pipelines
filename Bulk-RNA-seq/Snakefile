@@ -7,6 +7,7 @@ configfile: "config.yaml"
 import yaml
 import sys
 import os
+import re
 
 def getListOfFiles(dirName):
     # create a list of file and sub directories 
