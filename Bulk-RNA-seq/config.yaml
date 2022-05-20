@@ -29,6 +29,10 @@ options:
   counter: rsem
   # number of cores to use
   cores: 2
+  # DEG FDR
+  fdr: 0.05
+  # DEG log2FC
+  log2fc: 0.58
   
 genome:
   # Genome index directory for STAR
