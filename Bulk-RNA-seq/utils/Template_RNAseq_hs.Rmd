@@ -213,7 +213,7 @@ between groups, and small difference within groups.
 ```{r PCA, fig.height=8, fig.width=8}
 plotPCA(vsd, intgroup=c("Group")) + 
   geom_label_repel(aes(label = rownames(vsd@colData))) + 
-  theme(legend.position = "none") + xlim(-15, 15) + ylim(-10,10)
+  theme(legend.position = "none") 
 ```
 
 ## Correlation heatmap
