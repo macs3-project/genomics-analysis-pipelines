@@ -151,7 +151,4 @@ include: "rules/rna_mapping.smk"
 include: "rules/rna_counting.smk"
 
 # ---- integrative analysis of all samples ---
-if config["options"]["species"] == "hs":
-    include: "rules/rna_degreport_hs.smk"
-if config["options"]["species"] == "mm":
-    include: "rules/rna_degreport.smk"    
+include: "rules/rna_degreport.smk"    
