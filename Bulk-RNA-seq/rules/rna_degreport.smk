@@ -15,7 +15,7 @@ rule rna_reporthtml:
 	species = config["options"]["species"],
     shell:
         """
-        cp utils/Template_RNAseq_{params.species}.Rmd {params.tmpdir}/
+        cp utils/Template_RNAseq_{params.species}.Rmd {params.tmpdir}
 	cd {params.tmpdir}
         ln -s ../Analysis
         ln -s ../QC
