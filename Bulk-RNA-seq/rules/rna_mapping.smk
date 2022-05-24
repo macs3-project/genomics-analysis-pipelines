@@ -1,7 +1,7 @@
 rule star_map:
     input:
-        fastq1 = "{OUT_DIR}/Raw/{samplename}",
-        fastq2 = "{OUT_DIR}/Raw/{samplename}",
+        fastq1 = "{OUT_DIR}/Raw/{samplename}_R1.fastq.gz",
+        fastq2 = "{OUT_DIR}/Raw/{samplename}_R2.fastq.gz",
     output:
         bam1 = "{OUT_DIR}/Alignment/{samplename}.genome.bam",
         bam2 = "{OUT_DIR}/Alignment/{samplename}.transcriptome.bam",
