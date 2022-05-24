@@ -31,29 +31,30 @@ CUR_DIR = os.path.abspath('.')
 # output directory
 OUT_DIR = os.path.join( CUR_DIR, config["outprefix"] + "_Result" )
 
-
 # file prefix
 sample1_files = config["sample1fileprefix"]
 sample2_files = config["sample2fileprefix"]
 
+n_sample1 = len(sample1_files)
+n_sample2 = len(sample2_files)
+
+sample1_names = [ "%s_r%d" % (config["sample1"],x) for x in range( 1, n_sample1 + 1 ) ]
+sample2_names = [ "%s_r%d" % (config["sample2"],x) for x in range( 1, n_sample2 + 1 ) ]
+
 # fastq file path 
 AllFilePath = getListOfFiles(config["fastqdir"]) # absolute path for all fastq files
-sample1_Path =  list(filter(lambda x: re.search(config["sample1"],x), AllFilePath)) # filter the ones that are sample1
-sample2_Path =  list(filter(lambda x: re.search(config["sample2"],x), AllFilePath)) 
+sample1_Path =  list(filter(lambda x: re.search(config["sample1"],x), AllFilePath))[0:(2*n_sample1)] # filter the file paths that are sample1
+sample2_Path =  list(filter(lambda x: re.search(config["sample2"],x), AllFilePath))[0:(2*n_sample2)] 
 
-
-# number of replicates for sample1 and sample2 conditions
-n_sample1 = len( sample1_files )
-n_sample2 = len( sample2_files )
 
 # link names
-sample1_names = [ "%s_r%d_R%d" % (config["sample1"],x,y) for x in range( 1, n_sample1 + 1 ) for y in range(1,3) ]
-sample2_names = [ "%s_r%d_R%d" % (config["sample2"],x,y) for x in range( 1, n_sample2 + 1 ) for y in range(1,3) ]
+sample1_lnnames = [ "%s_r%d_R%d.fastq.gz" % (config["sample1"],x,y) for x in range( 1, n_sample1 + 1 ) for y in range(1,3) ]
+sample2_lnnames = [ "%s_r%d_R%d.fastq.gz" % (config["sample2"],x,y) for x in range( 1, n_sample2 + 1 ) for y in range(1,3) ]
 
 
 # make a dictionary to match name to actual raw file prefix
-sample_dict_list = list( zip( sample1_names, sample1_Path ) )
-sample_dict_list.extend( list( zip( sample2_names, sample2_Path ) ) )
+sample_dict_list = list( zip( sample1_lnnames, sample1_Path ) )
+sample_dict_list.extend( list( zip( sample2_lnnames, sample2_Path ) ) )
 sample_dict = dict( sample_dict_list )
 
 # make links
@@ -63,7 +64,6 @@ if not os.path.exists( OUT_DIR ):
 
 if not os.path.exists( OUT_DIR + "/Raw" ):
     os.mkdir( OUT_DIR + "/Raw" )
-
 
 for p in sample_dict_list:
     src = p[1]
@@ -151,4 +151,7 @@ include: "rules/rna_mapping.smk"
 include: "rules/rna_counting.smk"
 
 # ---- integrative analysis of all samples ---
-include: "rules/rna_degreport.smk"
+if config["options"]["species"] == "hs":
+    include: "rules/rna_degreport_hs.smk"
+if config["options"]["species"] == "mm":
+    include: "rules/rna_degreport.smk"    
