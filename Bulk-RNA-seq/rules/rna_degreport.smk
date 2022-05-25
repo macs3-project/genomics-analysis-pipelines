@@ -4,7 +4,7 @@ rule rna_reporthtml:
     output:
         report_html = REPORTHTML,
     params:
-        tmpdir = OUT_DIR+"/Tmp/",
+        tmpdir = OUT_DIR+"/Tmp",
         sample = SAMPLEFILE,
 	cond1 = config["sample1"],
 	cond2 = config["sample2"],
@@ -15,7 +15,7 @@ rule rna_reporthtml:
 	species = config["options"]["species"],
     shell:
         """
-        cp utils/Template_RNAseq_{params.species}.Rmd {params.tmpdir}
+        cp utils/Template_RNAseq_{params.species}.Rmd {params.tmpdir}/
 	cd {params.tmpdir}
         ln -s ../Analysis
         ln -s ../QC
