@@ -329,6 +329,7 @@ This shows the vsd data of all called DEGs, annotated with the group
 information.
 
 ```{r}
+vsd.a <- assay(vsd)
 pheatmap(vsd.a[e$id,], annotation_col=colData[,c("Group","Replicate"),drop=F], fontsize_col = 6, fontsize_row = 4, cluster_cols=FALSE, show_rownames=F, scale="row")
 ```
 
