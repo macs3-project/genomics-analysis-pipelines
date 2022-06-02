@@ -200,7 +200,7 @@ mcols(dds)<-DataFrame(mcols(dds), gene.info[match(rownames(dds),gene.info$id),])
 dds<-DESeq(dds, parallel=T)
 
 counts.data <- counts(dds, normalized=TRUE)
-rld<-rlog(dds, blind=FALSE)
+#rld<-rlog(dds, blind=FALSE)
 vsd<-varianceStabilizingTransformation(dds, blind=FALSE)
 # vsd.auto<-varianceStabilizingTransformation(dds.auto,blind=FALSE)
 ```
