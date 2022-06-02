@@ -679,7 +679,7 @@ names(v) <- deg.data$ensembl
 for ( keggid in kegg.all$ID ) {
   keggpathview <- pathview(gene.data  = v, pathway.id = keggid, gene.idtype="ENSEMBL", species    = "mmu" , limit=list(gene=2, cpd=1) )
   keggpathview.filename <- paste0("./",keggid,".pathview.png")
-  knitr::include_graphics(keggpathview.filename) # this code somehow doesn't work
+  #knitr::include_graphics(keggpathview.filename) # this code somehow doesn't work
 }
 # Here we should try to run the above commands then decide which figures to include in knitr.
 
