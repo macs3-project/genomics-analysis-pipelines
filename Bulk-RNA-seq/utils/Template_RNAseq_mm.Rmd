@@ -232,18 +232,18 @@ pheatmap(sampleDistMatrix,clustering_distance_rows=sampleDists,clustering_distan
 ```
 
 ```{r compilealldata}
-# all data will be saved into a file called `alldata.tsv`
-vsd.a <- assay(vsd)
+# all data will be saved into a file called `alldata.normalized.tsv`
 rownames(gene.info) <- gene.info$id
-vsd.a.r <- rownames(vsd.a)
-vsd.all <- cbind(gene.info[vsd.a.r,], vsd.a)
-write.table(vsd.all, file="alldata.tsv",row.names=FALSE) # 25937 rows
+count.r <- rownames(counts.data)
+count.all <- cbind(gene.info[count.r,], counts.data)
+if ( ! dir.exists("Results")) { dir.create("Results")}
+write.table(count.all, file="Results/alldata.normalized.tsv",row.names=FALSE) 
 ```
 
 ## Master table of variance stabilized counts
 
 ```{r}
-DT::datatable(vsd.all, rownames = F)
+DT::datatable(count.all, rownames = F)
 ```
 
 # DEG Analysis
