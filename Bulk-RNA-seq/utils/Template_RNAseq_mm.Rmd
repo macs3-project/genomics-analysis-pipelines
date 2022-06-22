@@ -74,7 +74,7 @@ gseanalysis <- function (genes, gset2gene, label="", qvalueCutoff=0.2, seed=1234
     
     if ( length(en.gsea@result$ID) > 0 ) {
         n <- min(length(en.gsea@result$ID), 10)
-    	  write.table(en.gsea, file=paste0("en.gsea.",label,".tsv"), sep = "\t")
+    	  write.table(en.gsea, file=paste0("en.gsea.",label,".tsv"), sep = "\t", row.names = F)
         p <- dotplot(en.gsea, showCategory=n, font.size = 8) + ggtitle("dotplot for GSEA")
         ggsave(plot=p, file=paste0("en.gsea.",label,".dotplot.png"), height=10, width=8)
 	      #p <- ridgeplot(en.gsea) + ggtitle("ridgeplot for GSEA")
