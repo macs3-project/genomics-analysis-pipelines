@@ -52,10 +52,33 @@ rule atac_bincounttable:
 	"mv {output.bincounttable}.tmp {output.bincounttable}; "
 
 # run DAR R script
-#rule atac_dar:
-#    input:
-#        bincounttable = BIN_COUNT_TABLE,
-#    output:
-#        dar_html = DAR_HTML,
-#    shell:
-#        "Rscript -e \"knitr::stitch_rmd(\'pipelineDescriptive.Rmd\')\"; "
+rule atac_dar:
+    input:
+        btable = BIN_COUNT_TABLE,
+	seqqc = SEQ_QC_SUMMARY,
+	peakqc = PEAK_QC_SUMMARY,
+	fragstat = FRAG_PNG,
+	gssheatmap = GSSHEATMAP,
+	gssprofile = GSSPROFILE,
+    output:
+        report_html = REPORTHTML,
+    params:
+        expname = config["outprefix"],
+        rmd = DARRMD,
+        tmpdir = OUT_DIR+"/Tmp/",
+        sample = SAMPLEFILE,
+	cond1 = config["sample1"],
+        cond2 = config["sample2"],
+        fdr = config["options"]["dar_fdr"],
+        log2fc = config["options"]["dar_log2fc"],
+    shell:
+        """
+        cp utils/{params.rmd} {params.tmpdir}
+        cd {params.tmpdir}
+	Rscript -e "library(rmarkdown); rmarkdown::render('{params.rmd}', output_format='html_document', output_file='report.html', params = list( name ='{params.expname}', seqqc = '../../{input.seqqc}', peakqc = '../../{input.peakqc}', fragstat = '../../{input.fragstat}', gssheatmap = '../../{input.gssheatmap}', gssprofile = '../../{input.gssprofile}', btable = '../../{input.btable}', c1name = '{params.cond1}', c2name = '{params.cond2}', metafile = '../../{params.sample}', fdr = {params.fdr}, log2fc = {params.log2fc}) )"
+        mv report.html ../../{output.report_html}
+	mv *.bed ../Analysis/
+	cd ../../
+        rm -rf {params.tmpdir}
+	"""
+

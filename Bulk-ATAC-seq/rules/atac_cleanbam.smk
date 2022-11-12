@@ -7,7 +7,7 @@ rule atac_bammkdp:
         metric = "{OUT_DIR}/Alignment/{name}.sortedByPos.mkdp.txt",
         tmp = temp(directory("{OUT_DIR}/Tmp/{name}"))
     shell:
-        "picard MarkDuplicates INPUT={input.bam} OUTPUT={output.bam} METRICS_FILE={output.metric} TMP_DIR={output.tmp};"
+        "picard MarkDuplicates -INPUT {input.bam} -OUTPUT {output.bam} -METRICS_FILE {output.metric} -TMP_DIR {output.tmp};"
         "rm {input.bam}"
 
 # generate clean (filtered/deduplicated and chrM-removed and Q30 filtered ) bam file for macs

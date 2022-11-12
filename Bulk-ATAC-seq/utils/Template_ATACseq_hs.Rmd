@@ -1,0 +1,540 @@
+---
+title: "ATAC-seq Differential Accessibility Analysis" 
+author: "Department of Biostat and Bioinfo"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: readable
+    toc: true
+    toc_float: true
+    df_print: paged
+---
+
+```{r configuration, include = FALSE}
+#args <- commandArgs(TRUE)
+args <- c("NA", "SCLC_DMS53.bincount.table", "DSM_Pos_v_Neg.deseq.csv", "DOXneg", "DOXpos",
+         "sample.txt", "0.05", "1",
+         "../../../Other_DB/MSigDB_Human/",
+         "../../../Other_DB/top1k/",
+         "../../../Other_DB/ENCODE_Ccre/")
+
+print(args)
+
+# input file
+bincount.table <- as.character( args[2] )
+# DEG file
+deg.file <- as.character( args[3] )
+
+# condition names
+condition1name <- args[4]
+condition2name <- args[5]
+metafile <- args[6]
+
+# DAR cutoff settings
+fdr.cutoff <- as.numeric( args[7] )
+log2fc.cutoff <- as.numeric( args[8] )
+
+# other annotations
+gmtfolder <- as.character( args[9] )
+cistrome.gigglepath <- as.character( args[10] )
+cistrome.annotation <- paste0(cistrome.gigglepath,"/CistromeDB.sample.annotation.txt")
+ccre.gigglepath <- as.character( args[11] )
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# settings
+library(tximport)
+library(DESeq2)
+library(ggplot2)
+library(pcaExplorer)
+library(BiocParallel)
+library(RColorBrewer)
+library(pheatmap)
+library(scales)
+library(ggrepel)
+library(plotly)
+library(UpSetR)
+library(TxDb.Hsapiens.UCSC.hg38.knownGene)
+library(org.Hs.eg.db)
+library(ChIPseeker)
+library(clusterProfiler)
+library(patchwork)
+register(MulticoreParam(4))
+
+options(stringsAsFactors=F)
+
+# some customized functions
+
+# savePeak function
+savePeak <- function( data, filename ) {
+  peak.name <- rownames(data)
+  peak.score <- as.integer(-10*log10(data$padj))
+  peak.location <- gsub(":|-","\t",data$location)
+  peak.content <- paste(peak.location, peak.name, peak.score, rep(".",length(peak.name)), sep="\t")
+  write(peak.content, file = filename)
+}
+
+# giggle function to run against cistromeDB
+RunGiggle.Cistrome <- function(peakbed, giggle.path, organism, antFile){
+  outputBed = peakbed
+  cmd <- paste0("sort --buffer-size 2G -k1,1 -k2,2n -k3,3n ", outputBed, " | cut -f 1,2,3 | bgzip -c > ", outputBed, ".bed.gz")
+  system(cmd)
+  cmd <- paste0("giggle search -g 2700000000 -i ", giggle.path, "/giggle.", organism, " -q ", outputBed, ".bed.gz -s > ", outputBed, ".result.xls")
+  system(cmd)
+  resultDf <- read.table(paste0(outputBed, ".result.xls"), sep="\t", row.names=NULL, comment.char="", stringsAsFactors =  FALSE)
+  resultDf <- resultDf[,-9]
+  colnames(resultDf) <- c("file", "file_size", "overlaps", "odds_ratio", "fishers_two_tail", "fishers_left_tail", "fishers_right_tail", "combo_score")
+  resultDf <- resultDf[resultDf$overlaps>0,] #at least some overlap
+  resultDf <- resultDf[resultDf$"odds_ratio">1,] # at least some enrichment over random
+  rownames(resultDf) <- sapply(strsplit(resultDf$file, "/"), function(x) return(gsub("_5foldPeak.bed.gz", "", rev(x)[1])))
+  resultDf <- resultDf[,c("file_size", "overlaps", "combo_score", "odds_ratio", "fishers_right_tail")]
+  targetDf <- merge(resultDf, antFile, by.x=0, by.y=0)
+  colnames(targetDf) <- c("sample_id", "sample_peak_number", "overlap_peak_number", "giggle_score", "odds_ratio", "fisher_right_tail", "GSM_id", "species", "factor", "cell_line", "cell_type", "tissue", "disease")
+
+  targetDf$biological_resource <- apply(targetDf, 1, function(x) return(paste0(x[7:10], collapse=";")))
+  targetDf$labels <- paste0(targetDf$"cell_line",":",targetDf$"factor")
+  targetDf$fisher_right_tail <- -log10(targetDf$"fisher_right_tail")
+  targetDf$"odds_ratio" <- log10(targetDf$"odds_ratio")  
+  
+  targetDf <- targetDf[, c("sample_id", "GSM_id", "species", "factor", "biological_resource", "labels", "giggle_score", "odds_ratio", "fisher_right_tail", "sample_peak_number", "overlap_peak_number")]
+  targetDf <- targetDf[order(-targetDf$giggle_score), ]
+  targetDf <- targetDf[!duplicated(targetDf$factor), ]
+  write.table(targetDf, paste0(outputBed, ".giggle.res.tfs.txt"), sep="\t", quote=FALSE, row.names=FALSE)
+  cmd <- paste0("rm ", outputBed, ".bed.gz")
+  system(cmd)
+  cmd <- paste0("rm ", outputBed, ".result.xls")
+  system(cmd)
+  return(targetDf)
+}
+
+# giggle function to run on ENCODE cCRE (human)
+RunGiggle.cCRE <- function(peakbed, giggle.ccre.path){
+  outputBed = peakbed
+  # bgzip
+  cmd <- paste0("sort --buffer-size 2G -k1,1 -k2,2n -k3,3n ", outputBed, " | cut -f 1,2,3 | bgzip -c > ", outputBed, ".bed.gz")
+  system(cmd)
+  
+  # get overlaps in BED
+  cmd <- paste0("giggle search -g 2700000000 -i ", giggle.ccre.path, " -q ", outputBed, ".bed.gz  -f pELS -o -v | perl -e '$_=<>;chomp;s/^##//;$p=$_;@id=();while(<>){if(/^##/){if(@id){print $p,\"\\t\",join(\",\",@id),\"\\n\";}chomp;s/^##//;$p=$_;@id=();}else{@_=split;push @id,$_[3];}}if(@id){print $p,\"\\t\",join(\",\",@id),\"\\n\";}' > ", outputBed, ".result.pELS.bed" )
+  system(cmd)
+  cmd <- paste0("giggle search -g 2700000000 -i ", giggle.ccre.path, " -q ", outputBed, ".bed.gz  -f dELS -o -v | perl -e '$_=<>;chomp;s/^##//;$p=$_;@id=();while(<>){if(/^##/){if(@id){print $p,\"\\t\",join(\",\",@id),\"\\n\";}chomp;s/^##//;$p=$_;@id=();}else{@_=split;push @id,$_[3];}}if(@id){print $p,\"\\t\",join(\",\",@id),\"\\n\";}' > ", outputBed, ".result.dELS.bed" )
+  system(cmd)
+  
+  # get summary
+  cmd <- paste0("giggle search -g 2700000000 -i ", giggle.ccre.path, " -q ", outputBed, ".bed.gz -s > ", outputBed, ".result.tsv")
+  system(cmd)
+  resultDf <- read.table(paste0(outputBed, ".result.tsv"), sep="\t", row.names=, comment.char="#", stringsAsFactors =  FALSE)
+  resultDf <- resultDf[,-9]
+  colnames(resultDf) <- c("class","file_size","overlaps","odds_ratio","fishers_two_tail","fishers_left_tail","fishers_right_tail","combo_score")
+  
+  cmd <- paste0("rm ", outputBed, ".bed.gz")
+  system(cmd)
+  cmd <- paste0("rm ", outputBed, ".result.tsv")
+  system(cmd)
+  resultDf$class <- gsub("encodeCcre/encodeCcre-","",resultDf$class)
+  resultDf$class <- gsub(".bed.gz","",resultDf$class)
+  return(resultDf)
+}
+
+# merge bins into region
+MergeBin <- function( binbed, regionbed ) {
+  cmd <- paste0( "bedtools sort -i ", binbed, " | bedtools merge -i - -c 5 -o max > ", regionbed )
+  system(cmd)
+}
+
+```
+
+```{r config.exp, include=FALSE}
+# parameters for filtering deg
+deg.fc <- 1.5
+deg.padj <- 0.05
+
+# distance cutoff for chipseeker to link dar to gene
+dar2gene.distance.cutoff <- 10000
+
+# parameters for enrichr/clusterprofiler
+cp.pvalueCutoff = 0.05
+cp.pAdjustMethod = "BH"
+cp.minGSSize = 5
+cp.maxGSSize = 500
+cp.qvalueCutoff = 0.2
+
+# output dar bed
+dbin.plus.vs.minus.all.bed <- "dbin.all.bed"
+dbin.plus.vs.minus.open.bed <- "dbin.open.bed"
+dbin.plus.vs.minus.close.bed <- "dbin.close.bed"
+
+dar.plus.vs.minus.open.bed <- "dar.open.bed"
+dar.plus.vs.minus.close.bed <- "dar.close.bed"
+
+# saved RDS files
+ddsfile <- "dds.rds"
+vsdfile <- "vsd.rds"
+resultfile <- "result.rds"
+
+```
+
+```{r loaddata, include=FALSE, echo=TRUE}
+# meta information
+meta<-read.table(metafile,head=T,row.names=1)
+meta$Replicate <- as.factor(meta$Replicate)
+meta$Group <- as.factor(meta$Group)
+
+# load cistrome annotation
+ant <- read.csv(cistrome.annotation, sep="\t", row.names=1, stringsAsFactors = FALSE)
+
+# load bincount matrix values
+d <- as.matrix(read.csv(bincount.table,sep="\t",row.names="bin_id",check.names = FALSE))
+## remove chrY
+d <- d[grep("chrY",d[,"chr"],invert=T),]
+## extract peak information
+peak.info<-data.frame(d[,c("pos","chr","start","end")])
+colnames(peak.info) <- "pos"
+## remove peak information from d, set mode
+d <- d[,-c(1,2,3,4)]
+mode(d) <- "integer"
+## make sure orders in meta and d are the same
+meta <- meta[order(rownames(meta)),]
+d <- d[,order(colnames(d))]
+
+# load gmt files for enricher/clusterprofiler
+# hall mark
+hgmtfile <- paste0(gmtfolder, "/h.all.v7.5.1.entrez.gmt")
+hgene <- read.gmt(hgmtfile)
+
+# ontology
+c5gmtfile <- paste0(gmtfolder, "/c5.go.bp.v7.5.1.entrez.gmt")
+bpgene <- read.gmt(c5gmtfile)
+
+# Human Phenotype Ontology
+hpogmtfile <- paste0(gmtfolder, "/c5.hpo.v7.5.1.entrez.gmt")
+hpogene <- read.gmt(hpogmtfile)
+
+# oncogenic signature
+c6gmtfile <- paste0(gmtfolder, "/c6.all.v7.5.1.entrez.gmt")
+oncogene <- read.gmt(c6gmtfile)
+
+# immuneSigDB
+c7gmtfile <- paste0(gmtfolder, "/c7.immunesigdb.v7.5.1.entrez.gmt")
+imgene <- read.gmt(c7gmtfile)
+
+# TF targets Signatures
+c3gmtfile <- paste0(gmtfolder, "/c3.tft.v7.5.1.entrez.gmt")
+tftgene <- read.gmt(c3gmtfile)
+
+# Curated Reactome Pathways
+rpgmtfile <- paste0(gmtfolder, "/c2.cp.reactome.v7.5.1.entrez.gmt")
+rpgene <- read.gmt(rpgmtfile)
+
+# Curated Wikipathways 
+wpgmtfile <- paste0(gmtfolder, "/c2.cp.wikipathways.v7.5.1.entrez.gmt")
+wpgene <- read.gmt(wpgmtfile)
+
+# Curated Biocarta
+bcgmtfile <- paste0(gmtfolder, "/c2.cp.biocarta.v7.5.1.entrez.gmt")
+bcgene <- read.gmt(bcgmtfile)
+
+# Curated KEGG
+kegggmtfile <- paste0(gmtfolder, "/c2.cp.kegg.v7.5.1.entrez.gmt")
+kegggene <- read.gmt(kegggmtfile)
+
+# Curated Canonical Pathways
+cpgmtfile <- paste0(gmtfolder, "/c2.cp.v7.5.1.entrez.gmt")
+cpgene <- read.gmt(cpgmtfile)
+```
+
+# Intro
+
+```{r deseq2run, include=FALSE, echo=TRUE}
+#saveRDS(args,"args.rds")
+#saveRDS(d,"d.rds")
+#saveRDS(meta,"meta.rds")
+# DESeq2
+dds<-DESeqDataSetFromMatrix(d,colData=meta,design=~Group)
+dds<-DESeq(dds,betaPrior=F,parallel=T)
+
+#sizeFactors(dds) <- meta$Preads
+#dds <- estimateSizeFactors(dds)
+#dds <- estimateDispersions(dds, fitType="local")
+#dds <- nbinomWaldTest(dds, betaPrior = FALSE)
+
+#rld<-rlog(dds,blind=FALSE)
+vsd<-varianceStabilizingTransformation(dds,blind=FALSE)
+```
+
+The aim for this analysis is to identify the chromatin accessibility changes, in terms of the Differentially Accessible Regions (DARs) from ATAC-seq, with `r condition2name` against with `r condition1name`. After calling peaks from ATAC-seq of the two conditions "`r condition1name`" and "`r condition2name`", we merged all peaks and keep only those genomic regions that can be detected as 'peak' in at least two replicates as the region of interest. We have `r length(rownames(dds))` regions of interest peaks across all samples. Then we generated read counts for each condition and each replicate in each region of interest. The count table is further processed through DESeq2 to call the DARs. Normalization is through VST -- Variance Stabilizing Transformation. 
+
+## PCA 
+
+A PCA analysis is performed on normalized data. We use PCA to explore the potential clustering in the samples. We can see the the Principal Component #1, which explains 94% of the variance within samples, is related to condition 2 against condition 1.
+
+```{r PCA, dev="png",dpi=300,fig.height=4,fig.width=6,echo=F,message=F}
+p<-plotPCA(vsd,intgroup=c("Group"), returnData=T)
+percentVar <- round(100 * attr(p, "percentVar"))
+muc1.bt549.pcaplot <- ggplot(p, aes(PC1, PC2, color=Group)) +
+  geom_point(size=3) +
+  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
+  labs(colour="Group")
+muc1.bt549.pcaplot
+```
+
+## Correlation heatmap
+
+Correlation analysis is performed on all counts data among all samples. Hierarchical clustering is based on correlation values among samples. Each sample is annotated with corresponding conditin and replicate. We could see the same conclusion as in our PCA analysis. 
+
+```{r CorHeatmap, dev="png",dpi=300,fig.height=5,fig.width=7,echo=F,message=F}
+sampleDists<-dist(t(assay(vsd)))
+sampleDistMatrix<-as.matrix(sampleDists)
+colnames(sampleDistMatrix)<-NULL
+colors<-colorRampPalette(rev(brewer.pal(9,"Blues")))(255)
+pheatmap(sampleDistMatrix,clustering_distance_rows=sampleDists,clustering_distance_cols=sampleDists,col=colors,annotation_row = meta[,c("Group","Replicate")], fontsize_row = 6 )
+```
+
+# DAR analysis
+
+DARs are called by using log2 foldchange cutoff of `r log2fc.cutoff` and FDR cutoff of `r fdr.cutoff`. We specifically called the DARs between `r condition1name` and `r condition2name`.
+
+## Summary of called differential bins
+```{r CallDbins, echo=FALSE}
+dbins.plus.vs.minus <- results(dds,contrast=c("Group",condition2name,condition1name))
+
+dbins.plus.vs.minus.df <- data.frame(location=peak.info[rownames(dbins.plus.vs.minus[order(dbins.plus.vs.minus$padj),]),"pos"], dbins.plus.vs.minus[order(dbins.plus.vs.minus$padj),c("baseMean","log2FoldChange","pvalue","padj")])
+
+dbins.plus.vs.minus.filtered <- dbins.plus.vs.minus.df[!is.na(dbins.plus.vs.minus.df$padj) & dbins.plus.vs.minus.df$padj<=fdr.cutoff & abs(dbins.plus.vs.minus.df$log2FoldChange)>=log2fc.cutoff,]
+```
+
+```{r save, echo=F}
+saveRDS(dds,ddsfile)
+saveRDS(vsd,vsdfile)
+saveRDS(dbins.plus.vs.minus, resultfile)
+
+savePeak(dbins.plus.vs.minus.filtered[dbins.plus.vs.minus.filtered$log2FoldChange>0,],dbin.plus.vs.minus.open.bed)
+savePeak(dbins.plus.vs.minus.filtered[dbins.plus.vs.minus.filtered$log2FoldChange<0,],dbin.plus.vs.minus.close.bed)
+```
+
+We have `r dim(dbins.plus.vs.minus.filtered[dbins.plus.vs.minus.filtered$log2FoldChange>0,])[1]` differential bins openning up and `r dim(dbins.plus.vs.minus.filtered[dbins.plus.vs.minus.filtered$log2FoldChange<0,])[1]` differential bins closing down. The differential bins are saved in `r dbin.plus.vs.minus.open.bed`
+
+## MA-plot and volcano plot
+
+MA-plot and volcano plot can be seen below. Note that these plots are based on 'bins'.
+
+### `r condition2name` vs `r condition1name`
+
+```{r MAvolcano1, dev="png",dpi=300,fig.height=5,fig.width=10,echo=F,message=F }
+par(mfcol=c(1,2))
+plot(log10(dbins.plus.vs.minus$baseMean),dbins.plus.vs.minus$log2FoldChange,pch=20,cex=0.5,ylab=paste0("log2 foldchange(",condition2name,"/",condition1name),xlab="log10(mean)",col="#BBBBBB10")
+legend("topleft",c("Up","Down"),col=c("#3A3A9830","#83242430"),pch=c(20,20))
+points(log10(dbins.plus.vs.minus.filtered[dbins.plus.vs.minus.filtered$log2FoldChange>0,"baseMean"]),dbins.plus.vs.minus.filtered[dbins.plus.vs.minus.filtered$log2FoldChange>0,"log2FoldChange"],col="#3A3A9810",pch=20,cex=0.5,)
+points(log10(dbins.plus.vs.minus.filtered[dbins.plus.vs.minus.filtered$log2FoldChange<0,"baseMean"]),dbins.plus.vs.minus.filtered[dbins.plus.vs.minus.filtered$log2FoldChange<0,"log2FoldChange"],col="#83242410",pch=20,cex=0.5,)
+abline(h=0)
+
+plot(dbins.plus.vs.minus$log2FoldChange,-log2(dbins.plus.vs.minus$padj),pch=20,cex=0.5,xlab=paste0("log2 foldchange(",condition2name,"/",condition1name),ylab="-log2(FDR)",col="#BBBBBB14")
+legend("topleft",c("Up","Down"),col=c("#3A3A9830","#83242430"),pch=c(20,20))
+points(dbins.plus.vs.minus.filtered[dbins.plus.vs.minus.filtered$log2FoldChange>0,"log2FoldChange"],-log2(dbins.plus.vs.minus.filtered[dbins.plus.vs.minus.filtered$log2FoldChange>0,"padj"]),col="#3A3A9830",pch=20,cex=0.5)
+points(dbins.plus.vs.minus.filtered[dbins.plus.vs.minus.filtered$log2FoldChange<0,"log2FoldChange"],-log2(dbins.plus.vs.minus.filtered[dbins.plus.vs.minus.filtered$log2FoldChange<0,"padj"]),col="#83242430",pch=20,cex=0.5)
+abline(v=0)
+```
+
+## Heatmap of accessibilities of Differntial Bins
+
+```{r merge.dars, echo = F, message = F }
+all.dbins <- rownames(dbins.plus.vs.minus.filtered)
+tmpd<-assay(vsd[all.dbins,])
+tmpd <- tmpd[,c(1,2,3,4,5,6)]
+```
+
+We have totally `r length(all.dbins)` differential bins, then we showed the accessibility difference (zscore over all conditions) in the heatmap and cluster the differential bins with hierarchical clustering (ward.D2 method in R). 
+
+```{r HEATMAP, dev="png",dpi=300,fig.height=8,fig.width=8,echo=F,message=F }
+pheatmap(tmpd, annotation_col=meta[,c("Group","Replicate")], fontsize_col = 6, fontsize_row = 4, cluster_cols=FALSE, show_colnames = F, show_rownames = F, clustering_method = "ward.D2", color = colorRampPalette(c("navyblue", "white" , "firebrick3"))(50), scale = "row")
+```
+
+## Summary of Differential Accessible Regions (DARs)
+
+Next, we merge nearby differential bins (100bps each) into 'differential accessible regions'. We merge the opening bins and closing bins separately into opening DARs and closing DARs. Therefore, if a opening DAR is next to a closing DAR, they won't be merged into one.
+
+```{r mergebin2region,echo=F}
+MergeBin(dbin.plus.vs.minus.open.bed, dar.plus.vs.minus.open.bed)
+MergeBin(dbin.plus.vs.minus.close.bed, dar.plus.vs.minus.close.bed)
+
+dar.open <- readPeakFile(dar.plus.vs.minus.open.bed)
+dar.close <- readPeakFile(dar.plus.vs.minus.close.bed)
+
+```
+
+
+## Genomic features of DARs
+
+### Genomic distribution of DARs
+
+DARs over the whole genome:
+```{r dev="png",dpi=300,fig.height=24,fig.width=8,echo=F,message=F }
+p.open <- covplot(dar.open, title="Openning DARs over Chromosomes") + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), axis.line.y = element_blank())
+p.close <- covplot(dar.close, title="Closing DARs over Chromosomes") + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), axis.line.y = element_blank())
+p.open/p.close
+```
+
+Summary of genomic feature distribution and distance to TSS distribution of opening DARs and closing DARs:
+
+```{r dev="png",dpi=300,fig.height=8,fig.width=8,echo=F,message=F }
+
+pfiles <- c(dar.plus.vs.minus.open.bed, dar.plus.vs.minus.close.bed)
+names(pfiles) <- c("Opening DARs", "Closing DARs")
+
+peakAnnoList <- lapply(pfiles, annotatePeak, TxDb=TxDb.Hsapiens.UCSC.hg38.knownGene, annoDb="org.Hs.eg.db", tssRegion=c(-3000, 3000), verbose=FALSE)
+
+p1 <- plotAnnoBar(peakAnnoList)
+p2 <- plotDistToTSS(peakAnnoList)
+p1/p2
+
+```
+## Enriched Cistrome analysis through GIGGLE
+
+Next, we aim to find the potential enriched TFs within those DARs by querying all the public available human transcription factor ChIP-seq dataset collection in Cistrome DB. For each ChIP-seq dataset, we ask how many DARs overlap with the top1000 peaks of that dataset, then calculate a 'Giggle combo score' which is the product of the -log10 pvalue and log2 odds-ratio. We queried the DARs from Up, and Down DARs separately.  
+
+```{r giggle.analysis, echo=FALSE, warning=F, message=FALSE}
+
+giggle.res.open <- RunGiggle.Cistrome( dar.plus.vs.minus.open.bed, cistrome.gigglepath, "GRCh38", ant)
+giggle.res.close <- RunGiggle.Cistrome( dar.plus.vs.minus.close.bed, cistrome.gigglepath, "GRCh38", ant)
+```
+
+
+### Openning DARs under condition 2 `r condition2name` against condition 1 `r condition1name`
+
+There are `r length(rownames(giggle.res.open))` Cistromes enriched (with at least 1 peak overlap and oddsratio>1) in DARs with increasing accessibility in condition 2 compared with condition 1. The complete list are shown below:
+
+```{r echo=FALSE}
+DT::datatable(giggle.res.open[order(-giggle.res.open$giggle_score),])
+```
+
+We can plot the odds-ratio in x-axis and pvalue (Fisher-test right tail test) in y-axis, while highlighting the top 10 Cistrome hits :
+
+```{r dev="png",dpi=300,fig.height=8,fig.width=8,echo=F,message=F }
+giggle.res.open.top10 <- giggle.res.open[order(giggle.res.open$giggle_score,decreasing = T),][1:10,]
+
+t <- paste0(giggle.res.open.top10$biological_resource,collapse = "\n")
+t <- paste0("Top10 result:\n",t)
+
+p <- ggplot(data=giggle.res.open, aes(x=odds_ratio, y=fisher_right_tail, label=labels)) + geom_point() + xlim(0,4) + ylim(0,250)
+p<-p + geom_label_repel(force=20, size=2, data = giggle.res.open.top10, max.overlaps = Inf) + xlab("Giggle log10 odds_ratio") + ylab("Giggle Fisher-test right-tail -log10 pvalue") + annotate(geom = 'text', label = t, x = Inf, y = -Inf, hjust = 1., vjust = -0.5)
+p
+
+```
+### Closing DARs under condition 2 `r condition2name` against condition 1 `r condition1name`
+
+There are `r length(rownames(giggle.res.close))` Cistromes enriched (with at least 1 peak overlap and oddsratio>1) in DARs with descreasing accessibility in condition 2 compared with condition 1. The top 10 TFs by the Giggle score ranking are:
+
+```{r echo=FALSE}
+DT::datatable(giggle.res.close[order(-giggle.res.close$giggle_score),])
+```
+
+We can plot the odds-ratio in x-axis and pvalue (Fisher-test right tail test) in y-axis, while highlighting the top 10 Cistrome hits :
+
+```{r dev="png",dpi=300,fig.height=8,fig.width=8,echo=F,message=F }
+giggle.res.close.top10 <- giggle.res.close[order(giggle.res.close$giggle_score,decreasing = T),][1:10,]
+
+t <- paste0(giggle.res.close.top10$biological_resource,collapse = "\n")
+t <- paste0("Top10 result:\n",t)
+
+p <- ggplot(data=giggle.res.close, aes(x=odds_ratio, y=fisher_right_tail, label=labels)) + geom_point() + xlim(0,5) + ylim(0,250)
+p <- p + geom_label_repel(force=20, size=2, data = giggle.res.close.top10, max.overlaps = Inf) + xlab("Giggle log10 odds_ratio") + ylab("Giggle Fisher-test right-tail -log10 pvalue") + annotate(geom = 'text', label = t, x = Inf, y = -Inf, hjust = 1., vjust = -0.5)
+p
+```
+
+
+### Cistrome hits of openning DARs vs closing DARs
+
+We can combine cistrome hits associated with DARs with opening (increasing) and closing (decreasing) accessibilities. Top10 hits from either opening DARs or closing DARs results are highlighted.
+
+```{r echo=FALSE,dev="png",dpi=300,fig.height=8,fig.width=8,echo=F,message=F }
+
+giggle.combined <- merge(giggle.res.open, giggle.res.close, by="sample_id",all=T)[,c('sample_id','giggle_score.x','giggle_score.y')]
+colnames(giggle.combined) <- c('sample_id','giggle_score.opening','giggle_score.closing')
+giggle.combined[is.na(giggle.combined$giggle_score.opening),"giggle_score.opening"] <- 0
+giggle.combined[is.na(giggle.combined$giggle_score.closing),"giggle_score.closing"] <- 0
+giggle.combined <- merge(giggle.combined, ant, by.x="sample_id", by.y=0)
+
+data.2 <- giggle.combined
+data.2$factor <- ""
+ix_label <- data.2$giggle_score.opening>=giggle.res.open.top10[10,]$giggle_score|data.2$giggle_score.closing>=giggle.res.close[10,]$giggle_score
+data.2[ix_label,]$factor <- paste0(giggle.combined[ix_label,]$cellLine,":",giggle.combined[ix_label,]$factor)
+
+p <- ggplot(data=data.2, aes(x=giggle_score.closing, y=giggle_score.opening, label=factor)) + geom_point(color = ifelse(data.2$factor == "","#99999930", "red"))
+set.seed(10)
+p <- p + geom_label_repel(force=10, size=3, max.overlaps = Inf) +xlab("Giggle score closing DARs") + ylab("Giggle score opening DARs")
+p
+```
+
+## Enriched ENCODE cCRE (Candidate Cis-Regulatory Elements) analysis through GIGGLE
+
+We checked the overlap between DARs and ENCODE phase 3 identified candidate cis-regulatory elements, and focused on the enhancer classes dELS ( distal Enhancer like Signature) and pELS ( promoter Enhancer like Signature).
+
+```{r echo=FALSE, message=F, warning=F}
+giggle.ccre.res.open <- RunGiggle.cCRE( dar.plus.vs.minus.open.bed, ccre.gigglepath )
+giggle.ccre.res.close <- RunGiggle.cCRE( dar.plus.vs.minus.close.bed, ccre.gigglepath )
+```
+
+### Summary table
+
+Summary of enrichment or depletion with cCRE annotations.
+
+```{r echo=FALSE}
+DT::datatable(giggle.ccre.res.open, caption = "ENCODE cCRE vs openning DARs")
+```
+
+```{r echo=FALSE}
+DT::datatable(giggle.ccre.res.close, caption = "ENCODE cCRE vs closing DARs")
+```
+
+## Analysis of DAR Associated Genes (not using BETA)
+
+We can do an association analysis without using the BETA tool. BETA requires much older computer environment (python2) so I can't seamlessly integrate into this Rmarkdown file, and the BETA analysis result will be presented in another Rmarkdown report as a secondary followup analysis. The idea is to identify a set of genes of which the TSS is 'close to' the given DARs. Then we use the DEG results from RNA-seq analysis to identify the genes that are both 'close to' DAR and 'deferentially expressed'. Then run the functional annotation analysis on them by querying the MSigDB annotations. While loading DEGs, we will use padj cutoff of `r deg.padj` and foldchange cutoff of `r deg.fc`.
+
+
+```{r load.degs, include=FALSE, echo=FALSE}
+
+# read DEGs
+deg.data <- read.table(deg.file,sep=",",header = T, row.names=1)
+deg <- deg.data[deg.data$padj<deg.padj & abs(deg.data$log2FoldChange)>log2(deg.fc),] # FDR 0.05 and log2FC 1.5
+deg.all <- rownames(deg)
+deg.up <- rownames(deg[deg$log2FoldChange>0,])
+deg.down <- rownames(deg[deg$log2FoldChange<0,])
+
+# define nearby genes
+peakAnnoDFs <- lapply(peakAnnoList, FUN = as.data.frame )
+peakAnnoDFs <- lapply(peakAnnoDFs, FUN= function(x) {x[x$distanceToTSS<=dar2gene.distance.cutoff,]})
+peakAnnoDFs.symbols <- lapply(peakAnnoDFs, FUN=function(x) {unique(x$SYMBOL)})
+```
+
+After loading the DEGs, we have `r length(deg.all)` differentially expressed genes, of which `r length(deg.up)[1]` are up-regulated, and `r length(deg.down)[1]` are down-regulated. We use `r dar2gene.distance.cutoff` as a distance cutoff to identify those genes close to the DARs. We can identify `r length(unique(peakAnnoDFs$"Opening DARs"$SYMBOL))` genes close to opening DARs and `r length(unique(peakAnnoDFs$"Closing DARs"$SYMBOL))` genes close to closing DARs. We can visualize the overlap with the following UpSet plot.
+
+```{r echo=FALSE,dev="png",dpi=300,fig.height=6,fig.width=8,echo=F,message=F}
+
+listInput <- list("Up regulated"=deg.up, "Down regulated"=deg.down, "Genes associated with Opening DARs"=unique(peakAnnoDFs$"Opening DARs"$SYMBOL), "Genes associated with Closing DARs"=unique(peakAnnoDFs$"Closing DARs"$SYMBOL))
+upset(fromList(listInput), keep.order=T, sets=rev(c("Up regulated", "Down regulated", "Genes associated with Opening DARs", "Genes associated with Closing DARs")))
+```
+
+We can further focus on the four major overlapping gene sets: 1. the up regulated genes associated with opening DARs; 2. the down regulated genes associated with closing DARs; 3. the down regulated genes associated with opening DARs; 4. the up regulated genes associated with closing DARs. We then do enrichment analysis to find potential gene functions or pathways of the four sets.
+
+```{r threesets, include=FALSE, echo=FALSE}
+set1.up.open <- bitr(intersect(deg.up, unique(peakAnnoDFs$"Opening DARs"$SYMBOL)), fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Hs.eg.db")
+set2.down.close <- bitr(intersect(deg.down, unique(peakAnnoDFs$"Closing DARs"$SYMBOL)), fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Hs.eg.db")
+set3.down.open <- bitr(intersect(deg.down, unique(peakAnnoDFs$"Opening DARs"$SYMBOL)), fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Hs.eg.db")
+set4.up.close <- bitr(intersect(deg.up, unique(peakAnnoDFs$"Closing DARs"$SYMBOL)), fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+geneList <- list("Up Open"=set1.up.open, "Down Close"=set2.down.close, "Down Open"=set3.down.open, "Up Close"=set4.up.close)
+```
+
+```{r echo=FALSE,dev="png",dpi=300,fig.height=8,fig.width=16,echo=F,message=F}
+compBP <- compareCluster(geneCluster = lapply(geneList, function(x){x$ENTREZID}), fun = "enricher", TERM2GENE = bpgene, pvalueCutoff  = cp.pvalueCutoff, pAdjustMethod = cp.pAdjustMethod, minGSSize = cp.minGSSize, maxGSSize = cp.maxGSSize, qvalueCutoff = cp.qvalueCutoff )
+dotplot(compBP)# + barplot(compBP)
+compH <- compareCluster(geneCluster = lapply(geneList, function(x){x$ENTREZID}), fun = "enricher", TERM2GENE = hgene, pvalueCutoff  = cp.pvalueCutoff, pAdjustMethod = cp.pAdjustMethod, minGSSize = cp.minGSSize, maxGSSize = cp.maxGSSize, qvalueCutoff = cp.qvalueCutoff )
+dotplot(compH)# + barplot(compH)
+compRP <- compareCluster(geneCluster = lapply(geneList, function(x){x$ENTREZID}), fun = "enricher", TERM2GENE = rpgene, pvalueCutoff  = cp.pvalueCutoff, pAdjustMethod = cp.pAdjustMethod, minGSSize = cp.minGSSize, maxGSSize = cp.maxGSSize, qvalueCutoff = cp.qvalueCutoff )
+dotplot(compRP)# + barplot(compRP)
+compWP <- compareCluster(geneCluster = lapply(geneList, function(x){x$ENTREZID}), fun = "enricher", TERM2GENE = wpgene, pvalueCutoff  = cp.pvalueCutoff, pAdjustMethod = cp.pAdjustMethod, minGSSize = cp.minGSSize, maxGSSize = cp.maxGSSize, qvalueCutoff = cp.qvalueCutoff )
+dotplot(compWP)# + barplot(compWP)
+```
+

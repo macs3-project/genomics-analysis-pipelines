@@ -16,10 +16,10 @@ fi
 F=$1
 G=$2
 
-bedtools slop -i ${F} -g ${G} -b 0 | bedClip stdin ${G} ${F}.clip
+#bedtools slop -i ${F} -g ${G} -b 0 | bedClip stdin ${G} ${F}.clip
 
-LC_COLLATE=C sort -k1,1 -k2,2n ${F}.clip > ${F}.sort.clip
+LC_COLLATE=C sort -k1,1 -k2,2n ${F} > ${F}.sort
 
-bedGraphToBigWig ${F}.sort.clip ${G} ${F/bdg/bw}
+bedGraphToBigWig ${F}.sort ${G} ${F/bdg/bw}
 
-rm -f ${F}.clip ${F}.sort.clip
+rm -f ${F}.sort

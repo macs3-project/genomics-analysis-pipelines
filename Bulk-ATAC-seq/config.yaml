@@ -38,6 +38,12 @@ options:
   peakcalling_PE_mode: Y
   # Y to use --nolambda, otherwise no change
   peakcalling_disable_lambda: Y
+  # FDR for DAR calling
+  dar_fdr: 0.05
+  # log2fc for DAR calling
+  dar_log2fc: 1
+  # DEG file name
+  deg_file: NA
   # number of cores to use
   cores: 2
   
@@ -66,4 +72,9 @@ annotation:
   CEASlib: /path/to/db/genome/GRCh38/GRCh38.refGene
   # gene annotation in GTF
   geneGTF: /path/to/db/genome/GRCh38/gencode.v22.annotation.gtf
-
+  # MSigDB path
+  MSigDB: /path/to/db/annotation/MSigDB/
+  # CistromeDB path (top1k)
+  CistromeDB: /path/to/db/giggle/cistromedb/top1k/
+  # ENCODE CCRE path
+  CCRE: /path/to/db/giggle/ENCODE_CCRE/

@@ -1,0 +1,299 @@
+---
+title: "ATAC-seq Differential Accessibility Analysis" 
+author: "Department of Biostat and Bioinfo"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: readable
+    toc: true
+    toc_float: true
+    df_print: paged
+params:
+    date: !r Sys.Date()
+    name: "pipeline.name"
+    btable: "filename"
+    peakqc: "filename"
+    seqqc: "filename"
+    fragstat: "filename"
+    gssheatmap: "filename"
+    gssprofile: "filename"
+    c1name: "c1name"
+    c2name: "c2name"
+    metafile: "filename"
+    fdr: 0.05
+    log2fc: 0.58
+---
+
+```{r configuration, include = FALSE, echo=FALSE }
+knitr::opts_chunk$set(echo = FALSE)
+
+# input file
+pipeline.name <- params$name
+
+bincount.table <- params$btable
+
+peakqc.file <- params$peakqc
+seqqc.file <- params$seqqc
+fragstat.png <- params$fragstat
+gss.heatmap <- params$gssheatmap
+gss.profile <- params$gssprofile
+
+# condition names
+condition1name <- params$c1name
+condition2name <- params$c2name
+metafile <- params$metafile
+
+# DAR cutoff settings
+fdr.cutoff <- as.numeric( params$fdr )
+log2fc.cutoff <- as.numeric( params$log2fc )
+```
+
+```{r setup, include=FALSE}
+# settings
+library(tximport)
+library(DESeq2)
+library(ggplot2)
+library(pcaExplorer)
+library(RColorBrewer)
+library(pheatmap)
+library(scales)
+library(ggrepel)
+library(plotly)
+library(org.Mm.eg.db)
+library(patchwork)
+
+options(stringsAsFactors=F)
+
+# some customized functions
+
+# savePeak function
+savePeak <- function( data, filename ) {
+  peak.name <- rownames(data)
+  peak.score <- as.integer(-10*log10(data$padj))
+  peak.location <- gsub(":|-","\t",data$location)
+  peak.content <- paste(peak.location, peak.name, peak.score, rep(".",length(peak.name)), sep="\t")
+  write(peak.content, file = filename)
+}
+
+MergeBin <- function( binbed, regionbed ) {
+  cmd <- paste0( "bedtools sort -i ", binbed, " | bedtools merge -i - -c 5 -o max > ", regionbed )
+  system(cmd)
+}
+
+```
+
+```{r config.exp, include=FALSE}
+# distance cutoff for chipseeker to link dar to gene
+dar2gene.distance.cutoff <- 10000
+
+# parameters for enrichr/clusterprofiler
+cp.pvalueCutoff = 0.05
+cp.pAdjustMethod = "BH"
+cp.minGSSize = 5
+cp.maxGSSize = 500
+cp.qvalueCutoff = 0.2
+
+# output dar bed
+dbin.c2.vs.c1.all.bed <- paste0( pipeline.name, ".dbin.all.bed" )
+dbin.c2.vs.c1.open.bed <- paste0( pipeline.name, ".dbin.open.bed" )
+dbin.c2.vs.c1.close.bed <- paste0( pipeline.name, ".dbin.close.bed" )
+
+dar.c2.vs.c1.open.bed <- paste0( pipeline.name, ".dar.open.bed" )
+dar.c2.vs.c1.close.bed <- paste0( pipeline.name, ".dar.close.bed" )
+
+# saved RDS files
+ddsfile <- paste0( pipeline.name, ".dds.rds" )
+vsdfile <- paste0( pipeline.name, ".vsd.rds" )
+resultfile <- paste0( pipeline.name, ".result.rds" )
+
+```
+
+```{r loaddata, include=FALSE, echo=TRUE}
+# meta information
+meta <- read.table(metafile,head=T,row.names=1)
+meta$Replicate <- as.factor(meta$Replicate)
+meta$Group <- as.factor(meta$Group)
+
+# load bincount matrix values
+d <- as.matrix(read.csv(bincount.table,sep="\t",row.names="bin_id",check.names = FALSE))
+## extract peak information
+peak.info<-data.frame(d[,c("pos","chr","start","end")])
+colnames(peak.info) <- "pos"
+## remove peak information from d, set mode
+d <- d[,-c(1,2,3,4)]
+mode(d) <- "integer"
+## make sure orders in meta and d are the same
+meta <- meta[order(rownames(meta)),]
+d <- d[,order(colnames(d))]
+```
+
+# Intro
+
+```{r deseq2run, include=FALSE, echo=TRUE}
+# DESeq2
+dds<-DESeqDataSetFromMatrix(d,colData=meta,design=~Group)
+dds<-DESeq(dds,betaPrior=F)
+
+vsd<-varianceStabilizingTransformation(dds,blind=FALSE)
+```
+
+The aim for this analysis is to identify the chromatin accessibility changes, in terms of the Differentially Accessible Regions (DARs) from ATAC-seq, with `r condition2name` against with `r condition1name`. After calling peaks from ATAC-seq of the two conditions "`r condition1name`" and "`r condition2name`", we merged all peaks and keep only those genomic regions that can be detected as 'peak' in at least two replicates as the region of interest. We have `r length(rownames(dds))` regions of interest peaks across all samples. Then we generated read counts for each condition and each replicate in each region of interest. The count table is further processed through DESeq2 to call the DARs. Normalization is through VST -- Variance Stabilizing Transformation. 
+
+# Summary of Data Quality
+
+This section contains QC metrics for this ATAC-seq dataset.
+
+## Sequencing QC
+
+```{r readsummary, echo=F}
+seqqc <- read.table(seqqc.file, header=T)
+
+colnames(seqqc) <- c("sample name", "replicate", "total reads", "mapped reads", "ratio mapped over total", "duplicated reads",  "ratio duplicated over total", "valid reads", "ratio valid over total", "valid in promoter", "ratio promoter over valid", "valid in peaks", "ratio peak over valid" )
+
+peakqc <- read.table(peakqc.file, header=T)
+colnames(peakqc) <- c("sample name", "replicate", "total pairs", "total peaks", "peaks in blacklist", "peaks in promoters", "ratio of peaks in promoters", "peaks in DHSs", "ratio of peaks in DHSs")
+
+```
+
+Note: "valid" means "unique mapped Q30 reads on chromosomes except for chrM".
+
+```{r showsqctable, echo=F}
+DT::datatable(seqqc)
+```
+
+## Peakcalling QC
+
+```{r showpqctable, echo=F}
+DT::datatable(peakqc)
+```
+
+## ATAC fragment size distribution
+```{r atacqcfrag, echo=F}
+knitr::include_graphics(fragstat.png)
+```
+
+## ATAC signal distribution around gene start sites
+```{r atacqcsignal, echo=F}
+knitr::include_graphics( c( gss.heatmap, gss.profile ) )
+```
+
+## PCA 
+
+A PCA analysis is performed on normalized data. We use PCA to explore the potential clustering in the samples. We can see the the Principal Component #1, which explains 94% of the variance within samples, is related to condition 2 against condition 1.
+
+```{r PCA, dev="png",dpi=300,fig.height=4,fig.width=6,echo=F,message=F}
+p<-plotPCA(vsd,intgroup=c("Group"), returnData=T)
+percentVar <- round(100 * attr(p, "percentVar"))
+muc1.bt549.pcaplot <- ggplot(p, aes(PC1, PC2, color=Group)) +
+  geom_point(size=3) +
+  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
+  labs(colour="Group")
+muc1.bt549.pcaplot
+```
+
+## Clustering heatmap
+
+Clustering analysis is performed on all counts data among all samples. Hierarchical clustering is based on euclidean distances among samples. Each sample is annotated with corresponding condition and replicate. We expect to see similar conclusion as in our PCA analysis. 
+
+```{r CorHeatmap, dev="png",dpi=300,fig.height=5,fig.width=7,echo=F,message=F}
+sampleDists<-dist(t(assay(vsd)))
+sampleDistMatrix<-as.matrix(sampleDists)
+colnames(sampleDistMatrix)<-NULL
+colors<-colorRampPalette(rev(brewer.pal(9,"Blues")))(255)
+pheatmap(sampleDistMatrix,clustering_distance_rows=sampleDists,clustering_distance_cols=sampleDists,col=colors,annotation_row = meta[,c("Group","Replicate")], fontsize_row = 6 )
+```
+
+## Correlation of the bin data
+
+We can see more detailed correlation analysis on the normalized count data of each pair of samples in the following scatterplot where each dot represents a bin. 
+
+```{r plotscatter, dev="png",dpi=300,fig.height=5,fig.width=7,echo=F,message=F}
+
+ct <- counts(dds, normalized=TRUE)
+
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
+{
+     usr <- par("usr"); on.exit(par(usr))
+     par(usr = c(0, 1, 0, 1))
+     r <- abs(cor(x, y))
+     txt <- format(c(r, 0.123), digits = digits)[1]
+     txt <- paste0(prefix, txt)
+     if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+     text(0.5, 0.5, txt, cex = cex.cor * r)
+}
+panel.lm <- function (x, y,  pch = par("pch"), col.lm = "red",  ...) 
+{   
+  ymin <- min(y)
+  ymax <- max(y)
+  xmin <- min(x)
+  xmax <- max(x)
+  ylim <- c(min(ymin,xmin),max(ymax,xmax))
+  xlim <- ylim
+  points(x, y, pch = pch, cex=0.1, ylim = ylim, xlim= xlim,...)
+  ok <- is.finite(x) & is.finite(y)
+  if (any(ok)) 
+    abline(lm(y[ok]~ x[ok]), 
+           col = col.lm, ...)
+}
+pairs(ct,upper.panel=panel.cor,lower.panel=panel.lm)
+```
+
+# DAR analysis
+
+## Call differential bins
+
+Differential bins are called by using log2 foldchange cutoff of `r log2fc.cutoff` and FDR cutoff of `r fdr.cutoff`. We specifically called the DARs between `r condition1name` and `r condition2name`.
+
+## Summary of called differential bins
+
+```{r CallDbins, echo=FALSE}
+dbins.c2.vs.c1 <- results(dds,contrast=c("Group",condition2name,condition1name))
+
+dbins.c2.vs.c1.df <- data.frame(location=peak.info[rownames(dbins.c2.vs.c1[order(dbins.c2.vs.c1$padj),]),"pos"], dbins.c2.vs.c1[order(dbins.c2.vs.c1$padj),c("baseMean","log2FoldChange","pvalue","padj")])
+
+dbins.c2.vs.c1.filtered <- dbins.c2.vs.c1.df[!is.na(dbins.c2.vs.c1.df$padj) & dbins.c2.vs.c1.df$padj<=fdr.cutoff & abs(dbins.c2.vs.c1.df$log2FoldChange)>=log2fc.cutoff,]
+
+saveRDS(dds,ddsfile)
+saveRDS(vsd,vsdfile)
+saveRDS(dbins.c2.vs.c1, resultfile)
+
+savePeak(dbins.c2.vs.c1.filtered[dbins.c2.vs.c1.filtered$log2FoldChange>0,],dbin.c2.vs.c1.open.bed)
+savePeak(dbins.c2.vs.c1.filtered[dbins.c2.vs.c1.filtered$log2FoldChange<0,],dbin.c2.vs.c1.close.bed)
+```
+
+We have `r dim(dbins.c2.vs.c1.filtered[dbins.c2.vs.c1.filtered$log2FoldChange>0,])[1]` differential bins openning up and `r dim(dbins.c2.vs.c1.filtered[dbins.c2.vs.c1.filtered$log2FoldChange<0,])[1]` differential bins closing down. The differential bins are saved in `r dbin.c2.vs.c1.open.bed`
+
+## MA-plot and volcano plot
+
+MA-plot and volcano plot can be seen below. Note that these plots are based on 'bins'.
+
+### `r condition2name` vs `r condition1name`
+
+```{r MAvolcano1, dev="png",dpi=300,fig.height=5,fig.width=10,echo=F,message=F }
+par(mfcol=c(1,2))
+plot(log10(dbins.c2.vs.c1$baseMean),dbins.c2.vs.c1$log2FoldChange,pch=20,cex=0.5,ylab=paste0("log2 foldchange(",condition2name,"/",condition1name),xlab="log10(mean)",col="#BBBBBB10")
+legend("topleft",c("Up","Down"),col=c("#3A3A9830","#83242430"),pch=c(20,20))
+points(log10(dbins.c2.vs.c1.filtered[dbins.c2.vs.c1.filtered$log2FoldChange>0,"baseMean"]),dbins.c2.vs.c1.filtered[dbins.c2.vs.c1.filtered$log2FoldChange>0,"log2FoldChange"],col="#3A3A9810",pch=20,cex=0.5,)
+points(log10(dbins.c2.vs.c1.filtered[dbins.c2.vs.c1.filtered$log2FoldChange<0,"baseMean"]),dbins.c2.vs.c1.filtered[dbins.c2.vs.c1.filtered$log2FoldChange<0,"log2FoldChange"],col="#83242410",pch=20,cex=0.5,)
+abline(h=0)
+
+plot(dbins.c2.vs.c1$log2FoldChange,-log2(dbins.c2.vs.c1$padj),pch=20,cex=0.5,xlab=paste0("log2 foldchange(",condition2name,"/",condition1name),ylab="-log2(FDR)",col="#BBBBBB14")
+legend("topleft",c("Up","Down"),col=c("#3A3A9830","#83242430"),pch=c(20,20))
+points(dbins.c2.vs.c1.filtered[dbins.c2.vs.c1.filtered$log2FoldChange>0,"log2FoldChange"],-log2(dbins.c2.vs.c1.filtered[dbins.c2.vs.c1.filtered$log2FoldChange>0,"padj"]),col="#3A3A9830",pch=20,cex=0.5)
+points(dbins.c2.vs.c1.filtered[dbins.c2.vs.c1.filtered$log2FoldChange<0,"log2FoldChange"],-log2(dbins.c2.vs.c1.filtered[dbins.c2.vs.c1.filtered$log2FoldChange<0,"padj"]),col="#83242430",pch=20,cex=0.5)
+abline(v=0)
+```
+
+## Merge bins into Differential Accessible Regions (DARs)
+
+Next, we merge nearby differential bins (100bps each) into 'differential accessible regions'. We merge the opening bins and closing bins separately into opening DARs and closing DARs. Therefore, if a opening DAR is next to a closing DAR, they won't be merged into one.
+
+```{r mergebin2region,echo=F}
+
+if ( dim(dbins.c2.vs.c1.filtered)[1] >= 1 ) {
+   MergeBin(dbin.c2.vs.c1.open.bed, dar.c2.vs.c1.open.bed)
+   MergeBin(dbin.c2.vs.c1.close.bed, dar.c2.vs.c1.close.bed)
+}
+```
+

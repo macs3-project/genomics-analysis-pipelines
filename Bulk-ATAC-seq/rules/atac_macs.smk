@@ -14,9 +14,9 @@ rule atac_callpeak:
     benchmark:
         "{OUT_DIR}/Benchmark/{name}_callpeak.benchmark"
     shell:
-        "macs3 callpeak --outdir {OUT_DIR}/Analysis -n {params.name} {macs3_callpeak_option} -t {input.bam}; "
+        "macs2 callpeak --outdir {OUT_DIR}/Analysis -n {params.name} {macs3_callpeak_option} -t {input.bam}; "
 	"mv {OUT_DIR}/Analysis/{params.name}_treat_pileup.bdg {output.bdg_spmr}; "
-	"macs3 pileup {macs3_pileup_option} -i {input.bam} -o {output.bdg_raw}; "
+	"macs2 pileup {macs3_pileup_option} -i {input.bam} -o {output.bdg_raw}; "
 
 # bdg2bw converts bedGraph to bigWig files
 rule atac_bdg2bw:
