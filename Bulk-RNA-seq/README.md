@@ -28,7 +28,7 @@ Modify the configuration file, e.g., output folder prefix: *outprefix*; conditio
 ## Step3: activate environment *da* and run snakemake workflow
 
 ```
-snakemake -np # try run
+snakemake -np # dry run
 snakemake --cores 16  # you may use slurm to submit this command
 
 ```

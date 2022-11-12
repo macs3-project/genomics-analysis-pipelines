@@ -74,7 +74,7 @@ gseanalysis <- function (genes, gset2gene, label="", qvalueCutoff=0.2, seed=1234
     
     if ( length(en.gsea@result$ID) > 0 ) {
         n <- min(length(en.gsea@result$ID), 10)
-    	  write.table(en.gsea, file=paste0("en.gsea.",label,".tsv"), sep = "\t")
+    	  write.table(en.gsea, file=paste0("en.gsea.",label,".tsv"), sep = "\t", row.names = F)
         p <- dotplot(en.gsea, showCategory=n, font.size = 8) + ggtitle("dotplot for GSEA")
         ggsave(plot=p, file=paste0("en.gsea.",label,".dotplot.png"), height=10, width=8)
 	      #p <- ridgeplot(en.gsea) + ggtitle("ridgeplot for GSEA")
@@ -198,9 +198,9 @@ mcols(dds)<-DataFrame(mcols(dds), gene.info[match(rownames(dds),gene.info$id),])
 dds<-DESeq(dds, parallel=T)
 
 counts.data <- counts(dds, normalized=TRUE)
-rld<-rlog(dds, blind=FALSE)
+#rld<-rlog(dds, blind=FALSE)
 vsd<-varianceStabilizingTransformation(dds, blind=FALSE)
-# vsd.auto<-varianceStabilizingTransformation(dds.auto,blind=FALSE)
+
 ```
 
 ## PCA plot
@@ -213,7 +213,7 @@ between groups, and small difference within groups.
 ```{r PCA, fig.height=8, fig.width=8}
 plotPCA(vsd, intgroup=c("Group")) + 
   geom_label_repel(aes(label = rownames(vsd@colData))) + 
-  theme(legend.position = "none") 
+  theme(legend.position = "none") + ylim(-10, 10)
 ```
 
 ## Correlation heatmap
@@ -231,17 +231,16 @@ pheatmap(sampleDistMatrix,clustering_distance_rows=sampleDists,clustering_distan
 
 ```{r compilealldata}
 # all data will be saved into a file called `alldata.tsv`
-vsd.a <- assay(vsd)
 rownames(gene.info) <- gene.info$id
-vsd.a.r <- rownames(vsd.a)
-vsd.all <- cbind(gene.info[vsd.a.r,], vsd.a)
-write.table(vsd.all, file="alldata.tsv",row.names=FALSE) # 25937 rows
+count.r <- rownames(counts.data)
+count.all <- cbind(gene.info[count.r,], counts.data)
+write.table(count.all, file="alldata.tsv",row.names=FALSE) 
 ```
 
 ## Master table of variance stabilized counts
 
 ```{r}
-DT::datatable(vsd.all, rownames = F)
+DT::datatable(count.all, rownames = F)
 ```
 
 # DEG Analysis
@@ -329,6 +328,7 @@ This shows the vsd data of all called DEGs, annotated with the group
 information.
 
 ```{r}
+vsd.a <- assay(vsd)
 pheatmap(vsd.a[e$id,], annotation_col=colData[,c("Group","Replicate"),drop=F], fontsize_col = 6, fontsize_row = 4, cluster_cols=FALSE, show_rownames=F, scale="row")
 ```
 
@@ -633,13 +633,12 @@ probably due to in-significant p-value.
 
 Please right-click and open the image in another tab to see details.
 
-```{r kegg0.draw, fig.width=16}
+```{r kegg0.draw, eval=FALSE, fig.width=16, include=FALSE}
 v <- deg.data$log2FoldChange
 names(v) <- deg.data$ensembl
 for ( keggid in kegg.all$ID ) {
   keggpathview <- pathview(gene.data  = v, pathway.id = keggid, gene.idtype="ENSEMBL", species = "hsa" , limit=list(gene=2, cpd=1) )
   keggpathview.filename <- paste0("./",keggid,".pathview.png")
-  knitr::include_graphics(keggpathview.filename) # this code somehow doesn't work
 }
 # Here we should try to run the above commands then decide which figures to include in knitr.
 

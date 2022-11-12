@@ -35,7 +35,9 @@ rule chip_homer:
     threads:
 	config["options"]["cores"]
     shell:
-        "sort -k5nr {input.peak} | head -500 > {output.peaktop500};"
-        "findMotifsGenome.pl {output.peaktop500} hg38 {homeroutput} -size given -mask -p {threads};"
-	"tar -zcf {homeroutputgz} {homeroutput}"
+	"""
+	sort -k5nr {input.peak} | head -500 > {output.peaktop500};
+        findMotifsGenome.pl {output.peaktop500} hg38 {homeroutput} -size given -mask -p {threads};
+        tar -zcf {homeroutputgz} {homeroutput};
+        """
 	

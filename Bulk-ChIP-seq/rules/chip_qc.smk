@@ -17,21 +17,23 @@ rule chip_qcstat:
     benchmark:
         "{OUT_DIR}/Benchmark/{name}_BulkQCStat.benchmark"
     shell:
-        "echo 'flagstat:' > {output.qc_stat};"
-        "samtools flagstat --threads {threads} {input.dirty_bam} >> {output.qc_stat};"
-        "samtools view --threads {threads} -b {params.bwflag_opt} -q 30 -o {output.uniq_bam} {input.dirty_bam};"
-        "echo 'mapped Q30 reads:' >> {output.qc_stat};"
-        "bedtools bamtobed -i {output.uniq_bam} > {output.uniq_bed};"
-        "wc -l {output.uniq_bed} >> {output.qc_stat};"
-        "echo 'chrM reads:' >> {output.qc_stat};"
-        "bedtools intersect -a {output.uniq_bed} -b {params.chrMregion} -u | wc -l >> {output.qc_stat};"
-        "echo 'non chrM reads:' >> {output.qc_stat};"
-        "bedtools intersect -a {output.uniq_bed} -b {params.chrMregion} -v > {output.uniq_clean_bed};"
-        "wc -l {output.uniq_clean_bed} >> {output.qc_stat};"
-        "echo 'non chrM reads in promoter:' >> {output.qc_stat};"
-        "bedtools intersect -a {output.uniq_clean_bed} -b {params.promoter} -u | wc -l >> {output.qc_stat};"
-        "echo 'non chrM reads in peak:' >> {output.qc_stat};"
-        "bedtools intersect -a {output.uniq_clean_bed} -b {input.peak} -u | wc -l >> {output.qc_stat};"
+        """
+        echo 'flagstat:' > {output.qc_stat};
+        samtools flagstat --threads {threads} {input.dirty_bam} >> {output.qc_stat};
+        samtools view --threads {threads} -b {params.bwflag_opt} -q 30 -o {output.uniq_bam} {input.dirty_bam};
+        echo 'mapped Q30 reads:' >> {output.qc_stat};
+        bedtools bamtobed -i {output.uniq_bam} > {output.uniq_bed};
+        wc -l {output.uniq_bed} >> {output.qc_stat};
+        echo 'chrM reads:' >> {output.qc_stat};
+        bedtools intersect -a {output.uniq_bed} -b {params.chrMregion} -u | wc -l >> {output.qc_stat};
+        echo 'non chrM reads:' >> {output.qc_stat};
+        bedtools intersect -a {output.uniq_bed} -b {params.chrMregion} -v > {output.uniq_clean_bed};
+        wc -l {output.uniq_clean_bed} >> {output.qc_stat};
+        echo 'non chrM reads in promoter:' >> {output.qc_stat};
+        bedtools intersect -a {output.uniq_clean_bed} -b {params.promoter} -u | wc -l >> {output.qc_stat};
+        echo 'non chrM reads in peak:' >> {output.qc_stat};
+        bedtools intersect -a {output.uniq_clean_bed} -b {input.peak} -u | wc -l >> {output.qc_stat};
+        """
 
 # qc for peakcalls from each replicate
 def get_name ( wcs ):
@@ -57,19 +59,21 @@ rule chip_peakqc:
     benchmark:
         "{OUT_DIR}/Benchmark/{name}_PeakQCStat.benchmark",
     shell:
-        "grep 'total {params.name_tag} in treatment' {input.peakxls} | perl -pe 's/#\ //' > {output.peak_qc}; "
-        "echo 'total number of peaks:' >> {output.peak_qc}; "
-        "wc -l {input.peak} | cut -f 1 -d' ' >> {output.peak_qc}; "
-        "echo 'number of peaks over FC 2:' >> {output.peak_qc}; "
-        "awk '$7>=2{{print}}' {input.peak} | wc -l >> {output.peak_qc}; "
-        "echo 'number of peaks in blacklist regions:' >> {output.peak_qc}; "
-        "bedtools intersect -a {input.peak} -b {params.blacklist} -u | wc -l >> {output.peak_qc}; "
-        "echo 'number of peaks in chrM:' >> {output.peak_qc}; "
-        "bedtools intersect -a {input.peak} -b {params.chrMregion} -u | wc -l >> {output.peak_qc}; "
-        "echo 'number of peaks in promoter regions:' >> {output.peak_qc}; "
-        "bedtools intersect -a {input.peak} -b {params.promoter} -u | wc -l >> {output.peak_qc}; "
-        "echo 'number of peaks in DHS regions:' >> {output.peak_qc}; "
-        "bedtools intersect -a {input.peak} -b {params.DHS} -u | wc -l >> {output.peak_qc}; "
+        """
+        grep 'total {params.name_tag} in treatment' {input.peakxls} | perl -pe 's/#\ //' > {output.peak_qc};
+        echo 'total number of peaks:' >> {output.peak_qc};
+        wc -l {input.peak} | cut -f 1 -d' ' >> {output.peak_qc};
+        echo 'number of peaks over FC 2:' >> {output.peak_qc};
+        awk '$7>=2{{print}}' {input.peak} | wc -l >> {output.peak_qc};
+        echo 'number of peaks in blacklist regions:' >> {output.peak_qc};
+        bedtools intersect -a {input.peak} -b {params.blacklist} -u | wc -l >> {output.peak_qc};
+        echo 'number of peaks in chrM:' >> {output.peak_qc};
+        bedtools intersect -a {input.peak} -b {params.chrMregion} -u | wc -l >> {output.peak_qc};
+        echo 'number of peaks in promoter regions:' >> {output.peak_qc};
+        bedtools intersect -a {input.peak} -b {params.promoter} -u | wc -l >> {output.peak_qc};
+        echo 'number of peaks in DHS regions:' >> {output.peak_qc};
+        bedtools intersect -a {input.peak} -b {params.DHS} -u | wc -l >> {output.peak_qc};
+        """
 
 # combine all sequencing qc together
 rule chip_sum_qcstat:
@@ -106,8 +110,9 @@ rule chip_plot_gss:
         gtf = config["annotation"]["geneGTF"],
         bwlist = " ".join( BIGWIG_SPMR),
     shell:
-        "awk '$3==\"gene\"{{print}}' {params.gtf} | perl -ne 'chomp;@F=split(/\\t/);$g=$F[8];$g=~s/^gene_id\\ \\\"(\\S+)\\\".*/$1/;$c=$F[0];$s=$F[6];if ($s==\"+\"){{$p=$F[3]-1}}else{{$p=$F[4]}}print join(\"\\t\",$c,$p,$p+1,$g,\".\",$s),\"\\n\"' > {output.gssfile};"
-        "computeMatrix reference-point -S {params.bwlist} -R {output.gssfile} --beforeRegionStartLength 3000 --afterRegionStartLength 3000 --skipZeros -o {output.mat};"
-        "plotHeatmap -m {output.mat} -out {output.heatmap};"
-        "plotProfile -m {output.mat} -out {output.profile} --plotType=se --perGroup;"
-        
+        """
+        awk '$3==\"gene\"{{print}}' {params.gtf} | perl -ne 'chomp;@F=split(/\\t/);$g=$F[8];$g=~s/^gene_id\\ \\\"(\\S+)\\\".*/$1/;$c=$F[0];$s=$F[6];if ($s==\"+\"){{$p=$F[3]-1}}else{{$p=$F[4]}}print join(\"\\t\",$c,$p,$p+1,$g,\".\",$s),\"\\n\"' > {output.gssfile};
+        computeMatrix reference-point -S {params.bwlist} -R {output.gssfile} --beforeRegionStartLength 3000 --afterRegionStartLength 3000 --skipZeros -o {output.mat};
+        plotHeatmap -m {output.mat} -out {output.heatmap};
+        plotProfile -m {output.mat} -out {output.profile} --plotType=se --perGroup;
+        """
