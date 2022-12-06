@@ -7,24 +7,6 @@ configfile: "config.yaml"
 import yaml
 import sys
 import os
-import re
-
-def getListOfFiles(dirName):
-    # create a list of file and sub directories 
-    # names in the given directory 
-    listOfFile = os.listdir(dirName)
-    allFiles = list()
-    # Iterate over all the entries
-    for entry in listOfFile:
-        # Create full path
-        fullPath = os.path.join(dirName, entry)
-        # If entry is a directory then get the list of files in this directory 
-        if os.path.isdir(fullPath):
-            allFiles = allFiles + getListOfFiles(fullPath)
-        else:
-            allFiles.append(fullPath)
-                
-    return allFiles        
 
 CUR_DIR = os.path.abspath('.')
 
@@ -35,26 +17,15 @@ OUT_DIR = os.path.join( CUR_DIR, config["outprefix"] + "_Result" )
 sample1_files = config["sample1fileprefix"]
 sample2_files = config["sample2fileprefix"]
 
-n_sample1 = len(sample1_files)
-n_sample2 = len(sample2_files)
-
+# number of replicates for sample1 and sample2 conditions
+n_sample1 = len( sample1_files )
+n_sample2 = len( sample2_files )
 sample1_names = [ "%s_r%d" % (config["sample1"],x) for x in range( 1, n_sample1 + 1 ) ]
 sample2_names = [ "%s_r%d" % (config["sample2"],x) for x in range( 1, n_sample2 + 1 ) ]
 
-# fastq file path 
-AllFilePath = getListOfFiles(config["fastqdir"]) # absolute path for all fastq files
-sample1_Path =  list(filter(lambda x: re.search(config["sample1"],x), AllFilePath))[0:(2*n_sample1)] # filter the file paths that are sample1
-sample2_Path =  list(filter(lambda x: re.search(config["sample2"],x), AllFilePath))[0:(2*n_sample2)] 
-
-
-# link names
-sample1_lnnames = [ "%s_r%d_R%d.fastq.gz" % (config["sample1"],x,y) for x in range( 1, n_sample1 + 1 ) for y in range(1,3) ]
-sample2_lnnames = [ "%s_r%d_R%d.fastq.gz" % (config["sample2"],x,y) for x in range( 1, n_sample2 + 1 ) for y in range(1,3) ]
-
-
 # make a dictionary to match name to actual raw file prefix
-sample_dict_list = list( zip( sample1_lnnames, sample1_Path ) )
-sample_dict_list.extend( list( zip( sample2_lnnames, sample2_Path ) ) )
+sample_dict_list = list( zip( sample1_names, sample1_files ) )
+sample_dict_list.extend( list( zip( sample2_names, sample2_files ) ) )
 sample_dict = dict( sample_dict_list )
 
 # make links
@@ -66,8 +37,15 @@ if not os.path.exists( OUT_DIR + "/Raw" ):
     os.mkdir( OUT_DIR + "/Raw" )
 
 for p in sample_dict_list:
-    src = p[1]
-    tgt = OUT_DIR + "/Raw/" + p[0]
+    src = os.path.abspath( config["fastqdir"] + "/" + p[1]+"_R1.fastq.gz" )
+    tgt = OUT_DIR + "/Raw/" + p[0]+"_R1.fastq.gz"
+    if not os.path.exists( tgt ):
+        os.symlink( src, tgt )
+    else:
+        if os.path.realpath(src) != os.path.realpath(tgt):
+            os.remove( tgt )
+    src = os.path.abspath( config["fastqdir"] + "/" + p[1]+"_R2.fastq.gz" )
+    tgt = OUT_DIR + "/Raw/" + p[0]+"_R2.fastq.gz"
     if not os.path.exists( tgt ):
         os.symlink( src, tgt )
     else:
@@ -151,4 +129,5 @@ include: "rules/rna_mapping.smk"
 include: "rules/rna_counting.smk"
 
 # ---- integrative analysis of all samples ---
-include: "rules/rna_degreport.smk"    
+include: "rules/rna_degreport.smk"
+

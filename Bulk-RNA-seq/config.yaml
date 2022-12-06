@@ -41,3 +41,6 @@ genome:
   # as the option for STAR
   rsemindex: /path/to/RSEM_index_directory/RSEM_index_prefix
 
+annotation:
+  geneinfo: /path/to/gencode.info
+  MSigDB: /path/to/MSigDB

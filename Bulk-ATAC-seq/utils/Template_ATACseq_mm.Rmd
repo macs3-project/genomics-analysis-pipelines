@@ -19,13 +19,15 @@ params:
     gssprofile: "filename"
     c1name: "c1name"
     c2name: "c2name"
+    c1peaks: "filename1 filename2 filenameN"
+    c2peaks: "filename1 filename2 filenameN"
     metafile: "filename"
     fdr: 0.05
     log2fc: 0.58
 ---
 
 ```{r configuration, include = FALSE, echo=FALSE }
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set( echo = FALSE, message = FALSE, dev = "CairoPNG", dpi = 150 )
 
 # input file
 pipeline.name <- params$name
@@ -37,6 +39,11 @@ seqqc.file <- params$seqqc
 fragstat.png <- params$fragstat
 gss.heatmap <- params$gssheatmap
 gss.profile <- params$gssprofile
+
+c1peaks <- as.list(paste0('../../',strsplit(params$c1peaks,'\\s+', perl=T)[[1]]))
+c2peaks <- as.list(paste0('../../',strsplit(params$c2peaks,'\\s+', perl=T)[[1]]))
+names(c1peaks) <- paste0("c1.rep",1:length(c1peaks))
+names(c2peaks) <- paste0("c2.rep",1:length(c2peaks))
 
 # condition names
 condition1name <- params$c1name
@@ -60,6 +67,8 @@ library(scales)
 library(ggrepel)
 library(plotly)
 library(org.Mm.eg.db)
+library(TxDb.Mmusculus.UCSC.mm10.knownGene)
+library(ChIPseeker)
 library(patchwork)
 
 options(stringsAsFactors=F)
@@ -108,7 +117,7 @@ resultfile <- paste0( pipeline.name, ".result.rds" )
 
 ```
 
-```{r loaddata, include=FALSE, echo=TRUE}
+```{r loaddata, include=FALSE}
 # meta information
 meta <- read.table(metafile,head=T,row.names=1)
 meta$Replicate <- as.factor(meta$Replicate)
@@ -129,9 +138,9 @@ d <- d[,order(colnames(d))]
 
 # Intro
 
-```{r deseq2run, include=FALSE, echo=TRUE}
+```{r deseq2run, include=FALSE}
 # DESeq2
-dds<-DESeqDataSetFromMatrix(d,colData=meta,design=~Group)
+dds<-DESeqDataSetFromMatrix(d,colData=meta,design=~Replicate+Group)
 dds<-DESeq(dds,betaPrior=F)
 
 vsd<-varianceStabilizingTransformation(dds,blind=FALSE)
@@ -145,7 +154,7 @@ This section contains QC metrics for this ATAC-seq dataset.
 
 ## Sequencing QC
 
-```{r readsummary, echo=F}
+```{r readsummary}
 seqqc <- read.table(seqqc.file, header=T)
 
 colnames(seqqc) <- c("sample name", "replicate", "total reads", "mapped reads", "ratio mapped over total", "duplicated reads",  "ratio duplicated over total", "valid reads", "ratio valid over total", "valid in promoter", "ratio promoter over valid", "valid in peaks", "ratio peak over valid" )
@@ -157,46 +166,66 @@ colnames(peakqc) <- c("sample name", "replicate", "total pairs", "total peaks", 
 
 Note: "valid" means "unique mapped Q30 reads on chromosomes except for chrM".
 
-```{r showsqctable, echo=F}
+```{r showsqctable}
 DT::datatable(seqqc)
 ```
 
 ## Peakcalling QC
 
-```{r showpqctable, echo=F}
+```{r showpqctable}
 DT::datatable(peakqc)
 ```
 
 ## ATAC fragment size distribution
-```{r atacqcfrag, echo=F}
+```{r atacqcfrag}
 knitr::include_graphics(fragstat.png)
 ```
 
 ## ATAC signal distribution around gene start sites
-```{r atacqcsignal, echo=F}
+```{r atacqcsignal}
 knitr::include_graphics( c( gss.heatmap, gss.profile ) )
+```
+
+## Brief summary of peaks distributions of each sample
+
+We use 'ChIPSeeker' to annotate, for ATAC-seq peaks from each sample,
+where the peaks are located relative the genes. 
+
+### Condition 1 `r condition1name`
+
+```{r annotatepeaksc1, fig.height=8, fig.width=8}
+peakAnnoList <- lapply(c1peaks, annotatePeak, TxDb=TxDb.Mmusculus.UCSC.mm10.knownGene, annoDb="org.Mm.eg.db", tssRegion=c(-3000, 3000), verbose=FALSE)
+p1 <- plotAnnoBar(peakAnnoList)
+p2 <- plotDistToTSS(peakAnnoList)
+p1 / p2
+```
+
+### Condition 2 `r condition2name`
+
+```{r annotatepeaksc2, fig.height=8, fig.width=8}
+peakAnnoList <- lapply(c2peaks, annotatePeak, TxDb=TxDb.Mmusculus.UCSC.mm10.knownGene, annoDb="org.Mm.eg.db", tssRegion=c(-3000, 3000), verbose=FALSE)
+p1 <- plotAnnoBar(peakAnnoList)
+p2 <- plotDistToTSS(peakAnnoList)
+p1 / p2
 ```
 
 ## PCA 
 
-A PCA analysis is performed on normalized data. We use PCA to explore the potential clustering in the samples. We can see the the Principal Component #1, which explains 94% of the variance within samples, is related to condition 2 against condition 1.
+A PCA analysis is performed on normalized data. Note: the physical
+distance per unit on y-axis is twice the distance per unit on x-axis
+for plotting purpose.
 
-```{r PCA, dev="png",dpi=300,fig.height=4,fig.width=6,echo=F,message=F}
-p<-plotPCA(vsd,intgroup=c("Group"), returnData=T)
-percentVar <- round(100 * attr(p, "percentVar"))
-muc1.bt549.pcaplot <- ggplot(p, aes(PC1, PC2, color=Group)) +
-  geom_point(size=3) +
-  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
-  ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
-  labs(colour="Group")
-muc1.bt549.pcaplot
+```{r PCA, fig.height=5, fig.width=8}
+plotPCA( vsd, intgroup=c("Group") ) + 
+   geom_label_repel(aes(label = paste0(vsd$Group,":r", as.numeric(vsd$Replicate)))) +
+   theme(legend.position = "none") + coord_fixed(ratio = 2)
 ```
 
 ## Clustering heatmap
 
 Clustering analysis is performed on all counts data among all samples. Hierarchical clustering is based on euclidean distances among samples. Each sample is annotated with corresponding condition and replicate. We expect to see similar conclusion as in our PCA analysis. 
 
-```{r CorHeatmap, dev="png",dpi=300,fig.height=5,fig.width=7,echo=F,message=F}
+```{r CorHeatmap, fig.height=5, fig.width=7}
 sampleDists<-dist(t(assay(vsd)))
 sampleDistMatrix<-as.matrix(sampleDists)
 colnames(sampleDistMatrix)<-NULL
@@ -208,7 +237,7 @@ pheatmap(sampleDistMatrix,clustering_distance_rows=sampleDists,clustering_distan
 
 We can see more detailed correlation analysis on the normalized count data of each pair of samples in the following scatterplot where each dot represents a bin. 
 
-```{r plotscatter, dev="png",dpi=300,fig.height=5,fig.width=7,echo=F,message=F}
+```{r plotscatter, fig.height=5, fig.width=7}
 
 ct <- counts(dds, normalized=TRUE)
 
@@ -247,7 +276,7 @@ Differential bins are called by using log2 foldchange cutoff of `r log2fc.cutoff
 
 ## Summary of called differential bins
 
-```{r CallDbins, echo=FALSE}
+```{r CallDbins}
 dbins.c2.vs.c1 <- results(dds,contrast=c("Group",condition2name,condition1name))
 
 dbins.c2.vs.c1.df <- data.frame(location=peak.info[rownames(dbins.c2.vs.c1[order(dbins.c2.vs.c1$padj),]),"pos"], dbins.c2.vs.c1[order(dbins.c2.vs.c1$padj),c("baseMean","log2FoldChange","pvalue","padj")])
@@ -270,7 +299,7 @@ MA-plot and volcano plot can be seen below. Note that these plots are based on '
 
 ### `r condition2name` vs `r condition1name`
 
-```{r MAvolcano1, dev="png",dpi=300,fig.height=5,fig.width=10,echo=F,message=F }
+```{r MAvolcano1, dpi=300, fig.height=5, fig.width=10}
 par(mfcol=c(1,2))
 plot(log10(dbins.c2.vs.c1$baseMean),dbins.c2.vs.c1$log2FoldChange,pch=20,cex=0.5,ylab=paste0("log2 foldchange(",condition2name,"/",condition1name),xlab="log10(mean)",col="#BBBBBB10")
 legend("topleft",c("Up","Down"),col=c("#3A3A9830","#83242430"),pch=c(20,20))
@@ -289,7 +318,7 @@ abline(v=0)
 
 Next, we merge nearby differential bins (100bps each) into 'differential accessible regions'. We merge the opening bins and closing bins separately into opening DARs and closing DARs. Therefore, if a opening DAR is next to a closing DAR, they won't be merged into one.
 
-```{r mergebin2region,echo=F}
+```{r mergebin2region}
 
 if ( dim(dbins.c2.vs.c1.filtered)[1] >= 1 ) {
    MergeBin(dbin.c2.vs.c1.open.bed, dar.c2.vs.c1.open.bed)
