@@ -25,3 +25,4 @@ rule atac_giggle:
         "Result/Benchmark/{fastqid}_peak_giggle.benchmark"
     shell:
         ""
+

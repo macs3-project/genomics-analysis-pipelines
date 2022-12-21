@@ -26,6 +26,23 @@ sample_dict_list = list( zip( sample1_names, sample1_files ) )
 sample_dict_list.extend( list( zip( sample2_names, sample2_files ) ) )
 sample_dict = dict( sample_dict_list )
 
+# decide the dar report Rmd file and macs3 code by the species setting
+if config['options']['species'] == 'hg19': 
+    DARRMD = 'Template_ATACseq_hg19.Rmd'
+    species_macs3_code = 'hs'
+elif config['options']['species'] == 'hg38':
+    DARRMD = 'Template_ATACseq_hg38.Rmd'
+    species_macs3_code = 'hs'
+elif config['options']['species'] == 'mm10':
+    DARRMD = 'Template_ATACseq_mm10.Rmd'
+    species_macs3_code = 'mm'
+elif config['options']['species'] == 'mm39':
+    DARRMD = 'Template_ATACseq_mm39.Rmd'
+    species_macs3_code = 'mm'
+else:
+    raise Exception("species %s not supported!" % (config['options']['species']) ) 
+
+
 # make links
 
 if not os.path.exists( OUT_DIR ):
@@ -49,6 +66,29 @@ for p in sample_dict_list:
     else:
         if os.path.realpath(src) != os.path.realpath(tgt):
             os.remove( tgt )
+
+# decide certain parameters based on config.yaml
+mapper = config["options"]["mapper"]
+macs3_genome_option = " -g %s " % ( species_macs3_code )
+macs3_cutoff_option = " -p " if config["options"]["peakcalling_cutoff_method"] == "pvalue" else " -q "
+macs3_cutoff_option += str(config["options"]["peakcalling_cutoff"])
+macs3_format_option = " -f BAMPE " if config["options"]["peakcalling_PE_mode"] == "Y" else " -f BAM "
+macs3_lambda_option = " --nolambda " if config["options"]["peakcalling_disable_lambda"] == "Y" else " "
+macs3_callpeak_option = f"--keep-dup all -B --SPMR {macs3_genome_option} {macs3_cutoff_option} {macs3_lambda_option} {macs3_format_option}"
+macs3_pileup_option = f" {macs3_format_option} "
+
+# make SAMPLEFILE which contains meta information
+SAMPLEFILE = "%s/sample.txt" % (OUT_DIR)
+
+# write sample information to text file which can be used by DAR analysis
+samplefhd = open(SAMPLEFILE, "wt")
+
+samplefhd.write("Sample\tGroup\tReplicate\n")
+for i in range( n_sample1 ):
+    samplefhd.write( f"{sample1_names[i]}\t{config['sample1']}\t{i}\n" )
+for i in range( n_sample2 ):
+    samplefhd.write( f"{sample2_names[i]}\t{config['sample2']}\t{i}\n" )
+samplefhd.close()
 
 # individual sample
 PEAKS1   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=sample1_names)
@@ -77,41 +117,16 @@ GSSMAT = "%s/Analysis/%s.gss.mat.gz" % (OUT_DIR, config["outprefix"])
 GSSHEATMAP = "%s/Analysis/%s.gss.heatmap.png" % (OUT_DIR, config["outprefix"])
 GSSPROFILE = "%s/Analysis/%s.gss.profile.png" % (OUT_DIR, config["outprefix"])
 REPORTHTML = "%s/Analysis/%s.report.html" % (OUT_DIR, config["outprefix"])
-	
+
+# ATAC DAR files
+DAR_OPEN = "%s/Analysis/%s.dar.open.bed" % (OUT_DIR, config["outprefix"])
+DAR_CLOSE = "%s/Analysis/%s.dar.close.bed" % (OUT_DIR, config["outprefix"])
+DAR_OPEN_HOMER = "%s/Analysis/%s.dar.open.HOMER.tar.gz" % (OUT_DIR, config["outprefix"])
+DAR_CLOSE_HOMER = "%s/Analysis/%s.dar.close.HOMER.tar.gz" % (OUT_DIR, config["outprefix"])
+
+# The definition of target files
 TARGET = []
-TARGET.extend(PEAKS1 + PEAKS2 + BIGWIG_RAW1 + BIGWIG_RAW2 + BIGWIG_SPMR1 + BIGWIG_SPMR2 + SEQ_STAT1 + SEQ_STAT2 + PEAK_STAT1 + PEAK_STAT2 + [SEQ_QC_SUMMARY, PEAK_QC_SUMMARY, FRAG_PNG, CONSENSUS, BIN_COUNT_TABLE, GSSHEATMAP, GSSPROFILE, REPORTHTML] )
-
-# decide certain parameters based on config.yaml
-mapper = config["options"]["mapper"]
-macs3_genome_option = " -g %s " % ( config["options"]["species"] )
-macs3_cutoff_option = " -p " if config["options"]["peakcalling_cutoff_method"] == "pvalue" else " -q "
-macs3_cutoff_option += str(config["options"]["peakcalling_cutoff"])
-macs3_format_option = " -f BAMPE " if config["options"]["peakcalling_PE_mode"] == "Y" else " -f BAM "
-macs3_lambda_option = " --nolambda " if config["options"]["peakcalling_disable_lambda"] == "Y" else " "
-macs3_callpeak_option = f"--keep-dup all -B --SPMR {macs3_genome_option} {macs3_cutoff_option} {macs3_lambda_option} {macs3_format_option}"
-macs3_pileup_option = f" {macs3_format_option} "
-
-# make SAMPLEFILE which contains meta information
-
-SAMPLEFILE = "%s/sample.txt" % (OUT_DIR)
-
-# write sample information to text file which can be used by DAR analysis
-samplefhd = open(SAMPLEFILE, "wt")
-
-samplefhd.write("Sample\tGroup\tReplicate\n")
-for i in range( n_sample1 ):
-    samplefhd.write( f"{sample1_names[i]}\t{config['sample1']}\t{i}\n" )
-for i in range( n_sample2 ):
-    samplefhd.write( f"{sample2_names[i]}\t{config['sample2']}\t{i}\n" )
-samplefhd.close()
-
-# decide the dar report Rmd file
-if config['options']['species'] == 'hs': 
-    DARRMD = 'Template_ATACseq_hs.Rmd'
-elif config['options']['species'] == 'mm':
-    DARRMD = 'Template_ATACseq_mm.Rmd'
-else:
-    raise Exception("species %s not supported!" % (config['options']['species']) ) 
+TARGET.extend(PEAKS1 + PEAKS2 + BIGWIG_RAW1 + BIGWIG_RAW2 + BIGWIG_SPMR1 + BIGWIG_SPMR2 + SEQ_STAT1 + SEQ_STAT2 + PEAK_STAT1 + PEAK_STAT2 + [SEQ_QC_SUMMARY, PEAK_QC_SUMMARY, FRAG_PNG, CONSENSUS, BIN_COUNT_TABLE, GSSHEATMAP, GSSPROFILE, REPORTHTML, DAR_OPEN, DAR_CLOSE, DAR_OPEN_HOMER, DAR_CLOSE_HOMER] )
 
 # one line to rule all
 
@@ -129,5 +144,4 @@ include: "rules/atac_qc.smk"
 # ---- integrative analysis of all samples ---
 
 include: "rules/atac_dar.smk"
-#include: "rules/atac_dar_annotating.smk"
-
+include: "rules/atac_dar_annotating.smk"

@@ -24,11 +24,9 @@ options:
   # Choose minimap2 if read is long and speed is a concern
   # Choose bwa-mem for traditional NGS data
   mapper: bwa-mem
-  # macs3 related options
-  # species: either hs for human or mm for mouse
-  # You can also pass the customized effective genome size to it
-  # since this is for macs `-g` option only.
-  species: hs
+  # macs3 and R analysis related options
+  # species: hg18 or hg38 for human or mm10 or mm39 for mouse
+  species: hg38
   # pvalue or qvalue
   peakcalling_cutoff_method: qvalue
   # cutoff value
