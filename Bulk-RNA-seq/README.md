@@ -12,7 +12,7 @@ Using environment.yml file, which includes the packages needed, to create a cond
 And install some other required packages, seperately. e.g., DO.db
 
 ```
-conda env create -f environment.yml # you may use slurm to submit this command
+conda env create -f environment.yml 
 ```
 
 ```
