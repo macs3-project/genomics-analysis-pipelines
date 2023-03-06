@@ -82,18 +82,29 @@ SEQ_STAT_C = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=cnames)
 PEAK_STAT= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=tnames)
 PEAK_ANNO= expand("%s/Analysis/{sample}_peaks.narrowPeak_chip_annotation.pdf" % (OUT_DIR), sample=tnames)
 PEAK_GIGGLE= expand("%s/Analysis/{sample}_peaks.narrowPeak_giggle_cistrome.pdf" % (OUT_DIR), sample=tnames)
-#PEAK_MOTIF= expand("%s/Analysis/{sample}_HOMER.tar.gz" % (OUT_DIR), sample=tnames)
+PEAK_MOTIF= expand("%s/Analysis/{sample}_HOMER.tar.gz" % (OUT_DIR), sample=tnames)
 #BIN_COUNT = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=tnames)
 
 # combined files
 SEQ_QC_SUMMARY = "%s/QC/%s.seqqc.stat.summary.txt" % (OUT_DIR, config["outprefix"])
 PEAK_QC_SUMMARY = "%s/QC/%s.peakqc.stat.summary.txt" % (OUT_DIR, config["outprefix"])
+BIGWIG_COR_SUMMARY = "%s/QC/%s.bigwig.cor.summary.txt" % (OUT_DIR, config["outprefix"])
 GSSMAT = "%s/Analysis/%s.gss.mat.gz" % (OUT_DIR, config["outprefix"])
 GSSHEATMAP = "%s/Analysis/%s.gss.heatmap.png" % (OUT_DIR, config["outprefix"])
 GSSPROFILE = "%s/Analysis/%s.gss.profile.png" % (OUT_DIR, config["outprefix"])
+
+COMBINED_PEAKS = "%s/Analysis/%s_peaks.narrowPeak" % (OUT_DIR, config["outprefix"])
+COMBINED_BIGWIG_RAW   = "%s/Analysis/%s_t_raw.bw" % (OUT_DIR, config["outprefix"])
+COMBINED_BIGWIG_LOGFC   = "%s/Analysis/%s_logfc.bw" % (OUT_DIR, config["outprefix"])
+COMBINED_BIGWIG_PSCORE   = "%s/Analysis/%s_pscore.bw" % (OUT_DIR, config["outprefix"])
+COMBINED_BIGWIG_SPMR   = "%s/Analysis/%s_t_spmr.bw" % (OUT_DIR, config["outprefix"] )
+COMBINED_PEAK_ANNO= "%s/Analysis/%s_peaks.narrowPeak_chip_annotation.pdf" % (OUT_DIR, config["outprefix"])
+COMBIEND_PEAK_GIGGLE= "%s/Analysis/%s_peaks.narrowPeak_giggle_cistrome.pdf" % (OUT_DIR, config["outprefix"])
+COMBINED_PEAK_MOTIF= "%s/Analysis/%s_HOMER.tar.gz" % (OUT_DIR, config["outprefix"])
+
 	
 TARGET = []
-TARGET.extend(PEAKS + BIGWIG_RAW + BIGWIG_SPMR + BIGWIG_LOGFC + BIGWIG_PSCORE + SEQ_STAT_T + SEQ_STAT_C + PEAK_STAT + PEAK_ANNO + PEAK_GIGGLE + [SEQ_QC_SUMMARY, PEAK_QC_SUMMARY, GSSHEATMAP, GSSPROFILE] )
+TARGET.extend(PEAKS + BIGWIG_RAW + BIGWIG_SPMR + BIGWIG_LOGFC + BIGWIG_PSCORE + SEQ_STAT_T + SEQ_STAT_C + PEAK_STAT + PEAK_ANNO + PEAK_GIGGLE + PEAK_MOTIF + [SEQ_QC_SUMMARY, PEAK_QC_SUMMARY, BIGWIG_COR_SUMMARY, GSSHEATMAP, GSSPROFILE,] + [COMBINED_PEAKS, COMBINED_BIGWIG_RAW, COMBINED_BIGWIG_LOGFC, COMBINED_BIGWIG_PSCORE, COMBINED_BIGWIG_SPMR, COMBINED_PEAK_ANNO, COMBIEND_PEAK_GIGGLE, COMBINED_PEAK_MOTIF] )
 
 # decide certain parameters based on config.yaml
 mapper = config["options"]["mapper"]

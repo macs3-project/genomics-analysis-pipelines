@@ -116,3 +116,19 @@ rule chip_plot_gss:
         plotHeatmap -m {output.mat} -out {output.heatmap};
         plotProfile -m {output.mat} -out {output.profile} --plotType=se --perGroup;
         """
+
+rule chip_bwcor:
+    input:
+        bigwigs = BIGWIG_RAW,
+	peak = COMBINED_PEAKS,
+    output:
+        bwcoroutput = BIGWIG_COR_SUMMARY,
+    params:
+        bwlist = " ".join( BIGWIG_RAW ),
+    shell:
+        """
+        echo "# BigWig Correlation, whole genome profiles" > {output.bwcoroutput};
+        bigWigCorrelate {params.bwlist} >> {output.bwcoroutput};
+	echo "# BigWig Correlation, on combined peak regions" >> {output.bwcoroutput};
+        bigWigCorrelate -restrict={input.peak} {params.bwlist} >> {output.bwcoroutput};
+        """

@@ -33,11 +33,10 @@ rule chip_homer:
         giggleexec = config["annotation"]["giggle"],
         gigglepath = config["annotation"]["giggledb"],
     threads:
-	config["options"]["cores"]
+        config["options"]["cores"],
     shell:
-	"""
-	sort -k5nr {input.peak} | head -500 > {output.peaktop500};
-        findMotifsGenome.pl {output.peaktop500} hg38 {homeroutput} -size given -mask -p {threads};
-        tar -zcf {homeroutputgz} {homeroutput};
         """
-	
+        sort -k5nr {input.peak} | head -500 > {output.peaktop500};
+        findMotifsGenome.pl {output.peaktop500} hg38 {output.homeroutput} -size given -mask -p {threads};
+        tar -zcf {output.homeroutputgz} {output.homeroutput};
+        """
