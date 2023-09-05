@@ -18,11 +18,11 @@ cfiles = config["cfileprefix"]
 # number of replicates for sample1 and sample2 conditions
 
 ## treat
-n_t = len( tfiles )
-tnames = [ "%s_r%d" % (config["sample"],x) for x in range( 1, n_t + 1 ) ]
+n_t = len( tfiles )		# number of replicates in treatment
+tnames = [ "%s_r%d" % (config["outprefix"],x) for x in range( 1, n_t + 1 ) ]
 
 ## control
-n_c = len( cfiles )
+n_c = len( cfiles )		# number of replicates in control
 cnames = [ "control_r%d" % (x) for x in range( 1, n_c + 1 ) ]
 
 # make a dictionary to match name to actual raw file prefix
@@ -71,6 +71,22 @@ else:
     raise Exception("wrong paired assignment!")
     sys.exit(1)
 
+# decide the report Rmd file and macs3 code by the species setting
+if config['options']['species'] == 'hg19': 
+    REPORTRMD = 'Template_hg19.Rmd'
+    species_macs3_code = 'hs'
+elif config['options']['species'] == 'hg38':
+    REPORTRMD = 'Template_hg38.Rmd'
+    species_macs3_code = 'hs'
+elif config['options']['species'] == 'mm10':
+    REPORTRMD = 'Template_mm10.Rmd'
+    species_macs3_code = 'mm'
+elif config['options']['species'] == 'mm39':
+    REPORTRMD = 'Template_mm39.Rmd'
+    species_macs3_code = 'mm'
+else:
+    raise Exception("species %s not supported!" % (config['options']['species']) )
+
 # individual sample
 PEAKS   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=tnames)
 BIGWIG_RAW   = expand("%s/Analysis/{sample}_t_raw.bw" % (OUT_DIR), sample=tnames)
@@ -82,7 +98,7 @@ SEQ_STAT_C = expand("%s/QC/{sample}.stat.txt" % (OUT_DIR), sample=cnames)
 PEAK_STAT= expand("%s/QC/{sample}.peakstat.txt" % (OUT_DIR), sample=tnames)
 PEAK_ANNO= expand("%s/Analysis/{sample}_peaks.narrowPeak_chip_annotation.pdf" % (OUT_DIR), sample=tnames)
 PEAK_GIGGLE= expand("%s/Analysis/{sample}_peaks.narrowPeak_giggle_cistrome.pdf" % (OUT_DIR), sample=tnames)
-PEAK_MOTIF= expand("%s/Analysis/{sample}_HOMER.tar.gz" % (OUT_DIR), sample=tnames)
+#PEAK_MOTIF= expand("%s/Analysis/{sample}_HOMER.tar.gz" % (OUT_DIR), sample=tnames)
 #BIN_COUNT = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=tnames)
 
 # combined files
@@ -102,13 +118,14 @@ COMBINED_PEAK_ANNO= "%s/Analysis/%s_peaks.narrowPeak_chip_annotation.pdf" % (OUT
 COMBIEND_PEAK_GIGGLE= "%s/Analysis/%s_peaks.narrowPeak_giggle_cistrome.pdf" % (OUT_DIR, config["outprefix"])
 COMBINED_PEAK_MOTIF= "%s/Analysis/%s_HOMER.tar.gz" % (OUT_DIR, config["outprefix"])
 
-	
+REPORTHTML="%s/Analysis/%s_report.html" % (OUT_DIR, config["outprefix"])
+
 TARGET = []
-TARGET.extend(PEAKS + BIGWIG_RAW + BIGWIG_SPMR + BIGWIG_LOGFC + BIGWIG_PSCORE + SEQ_STAT_T + SEQ_STAT_C + PEAK_STAT + PEAK_ANNO + PEAK_GIGGLE + PEAK_MOTIF + [SEQ_QC_SUMMARY, PEAK_QC_SUMMARY, BIGWIG_COR_SUMMARY, GSSHEATMAP, GSSPROFILE,] + [COMBINED_PEAKS, COMBINED_BIGWIG_RAW, COMBINED_BIGWIG_LOGFC, COMBINED_BIGWIG_PSCORE, COMBINED_BIGWIG_SPMR, COMBINED_PEAK_ANNO, COMBIEND_PEAK_GIGGLE, COMBINED_PEAK_MOTIF] )
+TARGET.extend(PEAKS + BIGWIG_RAW + BIGWIG_SPMR + BIGWIG_LOGFC + BIGWIG_PSCORE + SEQ_STAT_T + SEQ_STAT_C + PEAK_STAT + PEAK_ANNO + PEAK_GIGGLE + [SEQ_QC_SUMMARY, PEAK_QC_SUMMARY, BIGWIG_COR_SUMMARY, GSSHEATMAP, GSSPROFILE,] + [COMBINED_PEAKS, COMBINED_BIGWIG_RAW, COMBINED_BIGWIG_LOGFC, COMBINED_BIGWIG_PSCORE, COMBINED_BIGWIG_SPMR, COMBINED_PEAK_ANNO, COMBIEND_PEAK_GIGGLE, COMBINED_PEAK_MOTIF, REPORTHTML] )
 
 # decide certain parameters based on config.yaml
 mapper = config["options"]["mapper"]
-macs3_genome_option = " -g %s " % ( config["options"]["species"] )
+macs3_genome_option = " -g %s " % ( species_macs3_code )
 macs3_cutoff_option = " -p " if config["options"]["peakcalling_cutoff_method"] == "pvalue" else " -q "
 macs3_cutoff_option += str(config["options"]["peakcalling_cutoff"])
 macs3_format_option = " -f BAMPE " if config["options"]["peakcalling_PE_mode"] == "Y" else " -f BAM "
@@ -131,12 +148,12 @@ rule all:
 include: "rules/chip_mapping.smk"
 include: "rules/chip_cleanbam.smk"
 include: "rules/chip_macs.smk"
-#include: "rules/chip_peak_annotating.smk"
 include: "rules/chip_qc.smk"
 include: "rules/chip_annotate.smk"
 
 # ---- integrative analysis of all samples ---
 
-#include: "rules/chip_dar.smk"
-#include: "rules/chip_dar_annotating.smk"
-
+if n_t > 1:
+    include: "rules/chip_macs_combined.smk"
+else:
+    include: "rules/chip_macs_one_replicate.smk"

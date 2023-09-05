@@ -25,7 +25,7 @@ options:
   # Choose bwa-mem for traditional NGS data
   mapper: bwa-mem
   # macs3 and R analysis related options
-  # species: hg18 or hg38 for human or mm10 or mm39 for mouse
+  # species: hg19 or hg38 for human or mm10 or mm39 for mouse
   species: hg38
   # pvalue or qvalue
   peakcalling_cutoff_method: qvalue

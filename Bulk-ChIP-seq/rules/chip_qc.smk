@@ -120,7 +120,6 @@ rule chip_plot_gss:
 rule chip_bwcor:
     input:
         bigwigs = BIGWIG_RAW,
-	peak = COMBINED_PEAKS,
     output:
         bwcoroutput = BIGWIG_COR_SUMMARY,
     params:
@@ -129,6 +128,4 @@ rule chip_bwcor:
         """
         echo "# BigWig Correlation, whole genome profiles" > {output.bwcoroutput};
         bigWigCorrelate {params.bwlist} >> {output.bwcoroutput};
-	echo "# BigWig Correlation, on combined peak regions" >> {output.bwcoroutput};
-        bigWigCorrelate -restrict={input.peak} {params.bwlist} >> {output.bwcoroutput};
         """

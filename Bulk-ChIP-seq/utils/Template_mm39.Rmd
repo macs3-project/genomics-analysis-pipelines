@@ -70,8 +70,8 @@ library(pheatmap)
 library(scales)
 library(ggrepel)
 library(plotly)
-library(org.Hs.eg.db)
-library(TxDb.Hsapiens.UCSC.hg38.knownGene)
+library(org.Mm.eg.db)
+library(TxDb.Mmusculus.UCSC.mm39.knownGene)
 library(ChIPseeker)
 library(clusterProfiler)
 library(patchwork)
@@ -125,51 +125,25 @@ resultfile <- paste0( pipeline.name, ".result.rds" )
 ```{r loadmsigdb, include=FALSE}
 # load gmt files for enricher/clusterprofiler
 # hall mark
-hgmtfile <- paste0(gmtfolder, "/h.all.v7.5.1.entrez.gmt")
+hgmtfile <- paste0(gmtfolder, "/mh.all.v0.3.entrez.gmt")
 hgene <- read.gmt(hgmtfile)
 
 # ontology
-c5gmtfile <- paste0(gmtfolder, "/c5.go.bp.v7.5.1.entrez.gmt")
-bpgene <- read.gmt(c5gmtfile)
-
-# Human Phenotype Ontology
-hpogmtfile <- paste0(gmtfolder, "/c5.hpo.v7.5.1.entrez.gmt")
-hpogene <- read.gmt(hpogmtfile)
+gogmtfile <- paste0(gmtfolder, "/m5.all.v0.3.entrez.gmt")
+gogene <- read.gmt(gogmtfile)
 
 # oncogenic signature
-c6gmtfile <- paste0(gmtfolder, "/c6.all.v7.5.1.entrez.gmt")
-oncogene <- read.gmt(c6gmtfile)
-
-# immuneSigDB
-c7gmtfile <- paste0(gmtfolder, "/c7.immunesigdb.v7.5.1.entrez.gmt")
-imgene <- read.gmt(c7gmtfile)
+oncogmtfile <- paste0(gmtfolder, "/m4.all.v0.3.entrez.gmt")
+oncogene <- read.gmt(oncogmtfile)
 
 # TF targets Signatures
-c3gmtfile <- paste0(gmtfolder, "/c3.tft.v7.5.1.entrez.gmt")
-tftgene <- read.gmt(c3gmtfile)
+tftgmtfile <- paste0(gmtfolder, "/m3.all.v0.3.entrez.gmt")
+tftgene <- read.gmt(tftgmtfile)
 
-# Curated Reactome Pathways
-rpgmtfile <- paste0(gmtfolder, "/c2.cp.reactome.v7.5.1.entrez.gmt")
-rpgene <- read.gmt(rpgmtfile)
-
-# Curated Wikipathways 
-wpgmtfile <- paste0(gmtfolder, "/c2.cp.wikipathways.v7.5.1.entrez.gmt")
-wpgene <- read.gmt(wpgmtfile)
-
-# Curated Biocarta
-bcgmtfile <- paste0(gmtfolder, "/c2.cp.biocarta.v7.5.1.entrez.gmt")
-bcgene <- read.gmt(bcgmtfile)
-
-# Curated KEGG
-kegggmtfile <- paste0(gmtfolder, "/c2.cp.kegg.v7.5.1.entrez.gmt")
-kegggene <- read.gmt(kegggmtfile)
-
-# Curated Canonical Pathways
-cpgmtfile <- paste0(gmtfolder, "/c2.cp.v7.5.1.entrez.gmt")
-cpgene <- read.gmt(cpgmtfile)
+# Canonical pathways
+pathgmtfile <- paste0(gmtfolder, "/m2.cp.v0.3.entrez.gmt")
+pathgene <- read.gmt(pathgmtfile)
 ```
-
-
 
 ```{r loaddata, include=FALSE}
 # meta information
@@ -248,7 +222,7 @@ where the peaks are located relative the genes.
 ### Condition 1 `r condition1name`
 
 ```{r annotatepeaksc1, fig.height=8, fig.width=8}
-peakAnnoList <- lapply(c1peaks, annotatePeak, TxDb=TxDb.Hsapiens.UCSC.hg38.knownGene, annoDb="org.Hs.eg.db", tssRegion=c(-3000, 3000), verbose=FALSE)
+peakAnnoList <- lapply(c1peaks, annotatePeak, TxDb=TxDb.Mmusculus.UCSC.mm39.knownGene, annoDb="org.Mm.eg.db", tssRegion=c(-3000, 3000), verbose=FALSE)
 p1 <- plotAnnoBar(peakAnnoList)
 p2 <- plotDistToTSS(peakAnnoList)
 p1 / p2
@@ -257,7 +231,7 @@ p1 / p2
 ### Condition 2 `r condition2name`
 
 ```{r annotatepeaksc2, fig.height=8, fig.width=8}
-peakAnnoList <- lapply(c2peaks, annotatePeak, TxDb=TxDb.Hsapiens.UCSC.hg38.knownGene, annoDb="org.Hs.eg.db", tssRegion=c(-3000, 3000), verbose=FALSE)
+peakAnnoList <- lapply(c2peaks, annotatePeak, TxDb=TxDb.Mmusculus.UCSC.mm39.knownGene, annoDb="org.Mm.eg.db", tssRegion=c(-3000, 3000), verbose=FALSE)
 p1 <- plotAnnoBar(peakAnnoList)
 p2 <- plotDistToTSS(peakAnnoList)
 p1 / p2
@@ -404,7 +378,7 @@ if ( dim(dbins.c2.vs.c1.filtered)[1] >= 1 ) {
 if ( dim(dbins.c2.vs.c1.filtered)[1] >= 1 ) {
    dar.list <- as.list( c( dar.c2.vs.c1.open.bed, dar.c2.vs.c1.close.bed ) )
    names( dar.list ) <- c( "Opening DARs", "Closing DARs" )
-   peakAnnoList <- lapply(dar.list, annotatePeak, TxDb=TxDb.Hsapiens.UCSC.hg38.knownGene, annoDb="org.Hs.eg.db", tssRegion=c(-3000, 3000), verbose=FALSE)
+   peakAnnoList <- lapply(dar.list, annotatePeak, TxDb=TxDb.Mmusculus.UCSC.mm39.knownGene, annoDb="org.Mm.eg.db", tssRegion=c(-3000, 3000), verbose=FALSE)
    p1 <- plotAnnoBar(peakAnnoList)
    p2 <- plotDistToTSS(peakAnnoList)
    p1 / p2
@@ -434,7 +408,7 @@ set1.open <- bitr(unique(peakAnnoDFs$"Opening DARs"$SYMBOL), fromType="SYMBOL", 
 set2.close <- bitr(unique(peakAnnoDFs$"Closing DARs"$SYMBOL), fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Hs.eg.db")
 geneList <- list("Opening DARs"=set1.open, "Closing DARs"=set2.close)
 
-compBP <- compareCluster(geneCluster = lapply(geneList, function(x){x$ENTREZID}), fun = "enricher", TERM2GENE = bpgene, pvalueCutoff  = cp.pvalueCutoff, pAdjustMethod = cp.pAdjustMethod, minGSSize = cp.minGSSize, maxGSSize = cp.maxGSSize, qvalueCutoff = cp.qvalueCutoff )
-dotplot(compBP)
+compGO <- compareCluster(geneCluster = lapply(geneList, function(x){x$ENTREZID}), fun = "enricher", TERM2GENE = gogene, pvalueCutoff  = cp.pvalueCutoff, pAdjustMethod = cp.pAdjustMethod, minGSSize = cp.minGSSize, maxGSSize = cp.maxGSSize, qvalueCutoff = cp.qvalueCutoff )
+dotplot(compGO)
 
 ```

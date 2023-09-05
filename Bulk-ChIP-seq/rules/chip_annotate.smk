@@ -26,17 +26,40 @@ rule chip_homer:
     input:
         peak = "{OUT_DIR}/Analysis/{name}_peaks.narrowPeak",
     output:
-        peaktop500 = temp("{OUT_DIR}/Analysis/{name}_peaks.narrowPeak.top500.bed"),
-        homeroutput = temp("{OUT_DIR}/Analysis/{name}_HOMER"),
+        homeroutput = directory("{OUT_DIR}/Analysis/{name}_HOMER"),
         homeroutputgz = "{OUT_DIR}/Analysis/{name}_HOMER.tar.gz",
-    params:
-        giggleexec = config["annotation"]["giggle"],
-        gigglepath = config["annotation"]["giggledb"],
-    threads:
-        config["options"]["cores"],
     shell:
         """
-        sort -k5nr {input.peak} | head -500 > {output.peaktop500};
-        findMotifsGenome.pl {output.peaktop500} hg38 {output.homeroutput} -size given -mask -p {threads};
+        sort -k5nr {input.peak} | head -500 | findMotifsGenome.pl - hg38 {output.homeroutput} -size given -mask || echo done! ;
         tar -zcf {output.homeroutputgz} {output.homeroutput};
         """
+
+# run R script on combined peaks
+rule report:
+    input:
+        peakfile = COMBINED_PEAKS, 
+	seqqc = SEQ_QC_SUMMARY,
+	peakqc = PEAK_QC_SUMMARY,
+	gssheatmap = GSSHEATMAP,
+	gssprofile = GSSPROFILE,
+    output:
+        report_html = REPORTHTML,
+    params:
+        expname = config["outprefix"],
+        rmd = REPORTRMD,
+        tmpdir = OUT_DIR+"/Tmp/",
+	gmtfolder = config["annotation"]["MSigDB"],
+        cistromedb = config["annotation"]["giggledb"],
+    shell:
+        """
+	if [[ -d "{params.tmpdir}" ]]; then rm -rf "{params.tmpdir}"; fi
+	mkdir {params.tmpdir}
+        cp utils/{params.rmd} {params.tmpdir}
+        cd {params.tmpdir}
+	Rscript -e "library(rmarkdown); rmarkdown::render('{params.rmd}', output_format='html_document', output_file='report.html', params = list( name ='{params.expname}', seqqc = '../../{input.seqqc}', peakqc = '../../{input.peakqc}', gssheatmap = '../../{input.gssheatmap}', gssprofile = '../../{input.gssprofile}', gmtfolder = '{params.gmtfolder}', peakfile = '../../{input.peakfile}', cistromedb = '{params.cistromedb}') )"
+        mv report.html ../../{output.report_html}
+	mv *.tsv ../Analysis/
+	cd ../../
+        rm -rf {params.tmpdir}
+	"""
+

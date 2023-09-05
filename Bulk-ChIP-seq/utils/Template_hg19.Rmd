@@ -71,7 +71,7 @@ library(scales)
 library(ggrepel)
 library(plotly)
 library(org.Hs.eg.db)
-library(TxDb.Hsapiens.UCSC.hg38.knownGene)
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
 library(ChIPseeker)
 library(clusterProfiler)
 library(patchwork)
@@ -248,7 +248,7 @@ where the peaks are located relative the genes.
 ### Condition 1 `r condition1name`
 
 ```{r annotatepeaksc1, fig.height=8, fig.width=8}
-peakAnnoList <- lapply(c1peaks, annotatePeak, TxDb=TxDb.Hsapiens.UCSC.hg38.knownGene, annoDb="org.Hs.eg.db", tssRegion=c(-3000, 3000), verbose=FALSE)
+peakAnnoList <- lapply(c1peaks, annotatePeak, TxDb=TxDb.Hsapiens.UCSC.hg19.knownGene, annoDb="org.Hs.eg.db", tssRegion=c(-3000, 3000), verbose=FALSE)
 p1 <- plotAnnoBar(peakAnnoList)
 p2 <- plotDistToTSS(peakAnnoList)
 p1 / p2
@@ -257,7 +257,7 @@ p1 / p2
 ### Condition 2 `r condition2name`
 
 ```{r annotatepeaksc2, fig.height=8, fig.width=8}
-peakAnnoList <- lapply(c2peaks, annotatePeak, TxDb=TxDb.Hsapiens.UCSC.hg38.knownGene, annoDb="org.Hs.eg.db", tssRegion=c(-3000, 3000), verbose=FALSE)
+peakAnnoList <- lapply(c2peaks, annotatePeak, TxDb=TxDb.Hsapiens.UCSC.hg19.knownGene, annoDb="org.Hs.eg.db", tssRegion=c(-3000, 3000), verbose=FALSE)
 p1 <- plotAnnoBar(peakAnnoList)
 p2 <- plotDistToTSS(peakAnnoList)
 p1 / p2
@@ -404,7 +404,7 @@ if ( dim(dbins.c2.vs.c1.filtered)[1] >= 1 ) {
 if ( dim(dbins.c2.vs.c1.filtered)[1] >= 1 ) {
    dar.list <- as.list( c( dar.c2.vs.c1.open.bed, dar.c2.vs.c1.close.bed ) )
    names( dar.list ) <- c( "Opening DARs", "Closing DARs" )
-   peakAnnoList <- lapply(dar.list, annotatePeak, TxDb=TxDb.Hsapiens.UCSC.hg38.knownGene, annoDb="org.Hs.eg.db", tssRegion=c(-3000, 3000), verbose=FALSE)
+   peakAnnoList <- lapply(dar.list, annotatePeak, TxDb=TxDb.Hsapiens.UCSC.hg19.knownGene, annoDb="org.Hs.eg.db", tssRegion=c(-3000, 3000), verbose=FALSE)
    p1 <- plotAnnoBar(peakAnnoList)
    p2 <- plotDistToTSS(peakAnnoList)
    p1 / p2

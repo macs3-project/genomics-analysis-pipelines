@@ -1,5 +1,5 @@
 if mapper == "minimap2":
-   rule atac_map:
+    rule atac_map:
         input:
             fastq1 = "{OUT_DIR}/Raw/{name}_R1.fastq.gz",
             fastq2 = "{OUT_DIR}/Raw/{name}_R2.fastq.gz",
@@ -9,6 +9,10 @@ if mapper == "minimap2":
             genome = config["genome"]["mmi"],
         threads:
             config["options"]["cores"]
+        log:
+            "{OUT_DIR}/Log/{name}_minimap2.log"
+        benchmark:
+            "{OUT_DIR}/Benchmark/{name}_minimap2.benchmark"
         shell:
             "minimap2 -ax sr -t {threads} {params.genome} {input.fastq1} {input.fastq2} "
             "| samtools view --threads {threads} -b"
@@ -25,6 +29,10 @@ elif mapper == "bwa-mem":
             genome = config["genome"]["bwaindex"],
         threads:
             config["options"]["cores"]
+        log:
+            "{OUT_DIR}/Log/{name}_bwamem.log"
+        benchmark:
+            "{OUT_DIR}/Benchmark/{name}_bwamem.benchmark"
         shell:
             "bwa mem -t {threads} {params.genome} {input.fastq1} {input.fastq2} "
             "| samtools view --threads {threads} -b"
