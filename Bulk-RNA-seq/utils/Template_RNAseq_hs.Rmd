@@ -50,6 +50,7 @@ library(org.Hs.eg.db)
 library(data.table)
 #
 library(ggnewscale)
+library(gridExtra)
 library(MatchIt)
 library(reshape2)
 library(DT)
@@ -72,16 +73,17 @@ gseanalysis <- function (genes, gset2gene, label="", qvalueCutoff=0.2, seed=1234
     en.gsea <- GSEA(geneList, TERM2GENE = gset2gene, verbose=FALSE, pAdjustMethod="BH", pvalueCutoff=qvalueCutoff, seed=seed,minGSSize=minGSSize, maxGSSize=maxGSSize) # main function
     en.gsea <- setReadable(en.gsea, org.Hs.eg.db, keyType = "ENTREZID")
     
-    if ( length(en.gsea@result$ID) > 0 ) {
-        n <- min(length(en.gsea@result$ID), 10)
-    	  write.table(en.gsea, file=paste0("en.gsea.",label,".tsv"), sep = "\t", row.names = F)
-        p <- dotplot(en.gsea, showCategory=n, font.size = 8) + ggtitle("dotplot for GSEA")
-        ggsave(plot=p, file=paste0("en.gsea.",label,".dotplot.png"), height=10, width=8)
+    #if ( length(en.gsea@result$ID) > 0 ) {
+        #n <- min(length(en.gsea@result$ID), 10)
+    	  #write.table(en.gsea, file=paste0("en.gsea.",label,".tsv"), sep = "\t", row.names = F)
+        #p <- dotplot(en.gsea, showCategory=n, font.size = 8) + ggtitle("dotplot for GSEA")
+        #ggsave(plot=p, file=paste0("en.gsea.",label,".dotplot.png"), height=10, width=8)
 	      #p <- ridgeplot(en.gsea) + ggtitle("ridgeplot for GSEA")
 	      #ggsave(plot=p, file=paste0("en.gsea.",label,".ridgeplot.png"), height=10, width=8)
-        p <- gseaplot2(en.gsea, geneSetID = 1:n) + ggtitle("gseaplot for GSEA")
-	      ggsave(plot=p, file=paste0("en.gsea.",label,".gseaplot.png"), height=8, width=12)
-    }
+        #p <- gseaplot2(en.gsea, geneSetID = 1:n)
+        #p <- do.call("grid.arrange", c(p)) + ggtitle("GSEA plot")
+	      #ggsave(plot=p, file=paste0("en.gsea.",label,".gseaplot.png"), height=8, width=12)
+    #}
     return(en.gsea)
 }
 ```
@@ -98,7 +100,7 @@ tgmtfile <- paste0(MSigDBfoldername,"/c3.all.v7.5.1.entrez.gmt")  # Regulatory t
 t2gene <- read.gmt(tgmtfile)
 
 ongmtfile <- paste0(MSigDBfoldername,"/c5.all.v7.5.1.entrez.gmt")  # ontology gene sets
-on2gene <- read.gmt(tgmtfile)
+on2gene <- read.gmt(ongmtfile)
 
 ogmtfile <- paste0(MSigDBfoldername,"/c6.all.v7.5.1.entrez.gmt")  # oncogenic signature gene sets
 o2gene <- read.gmt(ogmtfile)
@@ -419,7 +421,7 @@ p.hallmark   <- gseanalysis( deg.data, h2gene, paste0( contrast.name,".hallmark"
 p.curated    <- gseanalysis( deg.data, c2gene, paste0( contrast.name,".curated" ), qvalueCutoff = 0.5 )
 p.regulatory <- gseanalysis( deg.data, t2gene, paste0( contrast.name,".regulatory" ), qvalueCutoff = 0.5 )
 p.ontology   <- gseanalysis( deg.data, on2gene, paste0( contrast.name,".ontology" ), qvalueCutoff = 0.5 )
-p.oncology   <- gseanalysis( deg.data, o2gene, paste0( contrast.name,".oncology" ), qvalueCutoff = 0.5 )
+p.oncogenic   <- gseanalysis( deg.data, o2gene, paste0( contrast.name,".oncogenic" ), qvalueCutoff = 0.5 )
 ```
 
 Note: if there is no figure, it means there is no enriched gene sets
@@ -432,7 +434,7 @@ n.p.hallmark <- ifelse(!is.null(p.hallmark), length(p.hallmark@result$ID), 0 )
 
 if ( n.p.hallmark > 0 ) {
   n <- min(n.p.hallmark, 5) 
-  gseaplot2(p.hallmark, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " hallmarks"))
+  gseaplot2(p.hallmark, geneSetID = 1:n, pvalue_table = T)
 }
 ```
 
@@ -443,7 +445,7 @@ n.p.curated <- ifelse(!is.null(p.curated), length(p.curated@result$ID), 0 )
 
 if ( n.p.curated > 0 ) {
   n <- min(n.p.curated, 5) 
-  gseaplot2(p.curated, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " curated"))
+  gseaplot2(p.curated, geneSetID = 1:n, pvalue_table = T)
 }
 ```
 
@@ -455,7 +457,7 @@ n.p.regulatory <- ifelse(!is.null(p.regulatory), length(p.regulatory@result$ID),
 
 if ( n.p.regulatory > 0 ) {
   n <- min(n.p.regulatory, 5) 
-  gseaplot2(p.regulatory, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " regulatory targets"))
+  gseaplot2(p.regulatory, geneSetID = 1:n, pvalue_table = T)
 }
 ```
 
@@ -466,24 +468,20 @@ n.p.ontology <- ifelse(!is.null(p.ontology), length(p.ontology@result$ID), 0 )
 
 if ( n.p.ontology > 0 ) {
   n <- min(n.p.ontology, 5) 
-  gseaplot2(p.ontology, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " ontology"))
+  gseaplot2(p.ontology, geneSetID = 1:n, pvalue_table = T)
 }
 ```
 
-
-
-## GSEA Tumor Ontology gene sets
+## GSEA Tumor Oncogenic gene sets
 
 ```{r fig.height=6, fig.width=12}
-n.p.oncology <- ifelse(!is.null(p.oncology), length(p.oncology@result$ID), 0 )
+n.p.oncogenic <- ifelse(!is.null(p.oncogenic), length(p.oncogenic@result$ID), 0 )
 
-if ( n.p.oncology > 0 ) {
-  n <- min(n.p.oncology, 5) 
-  gseaplot2(p.oncology, geneSetID = 1:n, pvalue_table = T) + ggtitle(paste0("GSEA: Top ", as.character(n), " oncology"))
+if ( n.p.oncogenic > 0 ) {
+  n <- min(n.p.oncogenic, 5) 
+  gseaplot2(p.oncogenic, geneSetID = 1:n, pvalue_table = T)
 }
 ```
-
-
 
 # Gene function Over-Representation analysis 
 
@@ -552,12 +550,17 @@ if ( dim(head(go.all))[1] >0 ) {
 *Treeplot* Please right-click and show the figure in seperate tab to see detail if the font is too small.
 
 ```{r cp0.draw, fig.height=12, fig.width=16}
-if ( dim(head(go.all))[1] >0 ) {
-  p1 <- treeplot(go.all)
-  p2 <- mutate(go.all, qscore = -log(p.adjust, base=10)) %>% 
-               barplot(x="qscore")
-  p1 / p2
-}
+tryCatch({
+  if (dim(head(go.all))[1] > 0) {
+    p1 <- treeplot(go.all)
+    p2 <- mutate(go.all, qscore = -log(p.adjust, base=10)) %>% 
+             barplot(x="qscore")
+    p1 / p2
+  }
+}, error = function(e) {
+  message("Error encountered: ", e)
+  # Skip the code if error occurs
+})
 ```
 
 ## GO term analysis for upregulated genes
@@ -576,12 +579,17 @@ if ( dim(head(go.up))[1] >0 ) {
 *Treeplot* Please right-click and show the figure in seperate tab to see detail if the font is too small.
 
 ```{r cp1.draw, fig.height=12, fig.width=16}
-if ( dim(head(go.up))[1] >0 ) {
-  p1 <- treeplot(go.up)
-  p2 <- mutate(go.up, qscore = -log(p.adjust, base=10)) %>% 
-               barplot(x="qscore")
-  p1 / p2
-}
+tryCatch({
+  if (dim(head(go.up))[1] > 0) {
+    p1 <- treeplot(go.up)
+    p2 <- mutate(go.up, qscore = -log(p.adjust, base=10)) %>% 
+             barplot(x="qscore")
+    p1 / p2
+  }
+}, error = function(e) {
+  message("Error encountered: ", e)
+  # Skip the code if error occurs
+})
 ```
 
 ## GO term analysis for downregulated genes
@@ -600,12 +608,17 @@ if ( dim(head(go.down))[1] >0 ) {
 *Treeplot* Please right-click and show the figure in seperate tab to see detail if the font is too small.
 
 ```{r cp2.draw, fig.height=12, fig.width=16}
-if ( dim(head(go.down))[1] >0 ) {
-  p1 <- treeplot(go.down)
-  p2 <- mutate(go.down, qscore = -log(p.adjust, base=10)) %>% 
-               barplot(x="qscore")
-  p1 / p2
-}
+tryCatch({
+  if (dim(head(go.down))[1] > 0) {
+    p1 <- treeplot(go.down)
+    p2 <- mutate(go.down, qscore = -log(p.adjust, base=10)) %>% 
+             barplot(x="qscore")
+    p1 / p2
+  }
+}, error = function(e) {
+  message("Error encountered: ", e)
+  # Skip the code if error occurs
+})
 ```
 
 # KEGG analysis

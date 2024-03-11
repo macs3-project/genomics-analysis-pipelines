@@ -85,7 +85,7 @@ star_cmd = "STAR"
 rsem_cmd = "rsem-calculate-expression"
 
 # STAR parameters: common
-starpar_common=" --genomeDir "+ config["genome"]["starindex"] +"  --outSAMunmapped Within --outFilterType BySJout --outSAMattributes NH HI AS NM MD    --outFilterMultimapNmax 20   --outFilterMismatchNmax 999 --outFilterMismatchNoverReadLmax 0.04   --alignIntronMin 20   --alignIntronMax 1000000   --alignMatesGapMax 1000000 --alignSJoverhangMin 8   --alignSJDBoverhangMin 1 --sjdbScore 1 --readFilesCommand zcat"
+starpar_common=" --genomeDir "+ config["genome"]["starindex"] +"  --outSAMunmapped Within --outFilterType BySJout --outSAMattributes NH HI AS NM MD    --outFilterMultimapNmax 20   --outFilterMismatchNmax 999 --outFilterMismatchNoverReadLmax 0.04   --alignIntronMin 20   --alignIntronMax 1000000   --alignMatesGapMax 1000000 --alignSJoverhangMin 8   --alignSJDBoverhangMin 1 --sjdbScore 1 --readFilesCommand zcat "
 
 # STAR parameters: run-time, controlled by DCC
 starpar_run=" --runThreadN "+ str(config["options"]["cores"])  +" --genomeLoad LoadAndKeep  --limitBAMsortRAM 10000000000"
