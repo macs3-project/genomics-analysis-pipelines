@@ -98,49 +98,49 @@ qvalueCutoff = 0.2
 
 # hallmark
 hallmark <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = hgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
-if ( dim(hallmark)[1] > 0 ) {
+if ( !is.null(hallmark) && dim(hallmark)[1] > 0 ) {
     dotplot(hallmark, title = "MSigDB Hallmark")
 }
 
 # The GO geneset Biology Process signatures
 bp <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = bpgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
-if ( dim(bp)[1] > 0 ) {
+if ( !is.null(bp) && dim(bp)[1] > 0 ) {
     dotplot(bp, title = "MSigDB GO BP")
 }
 
 # The Human Phenotype Ontology signatures
 hpo <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = hpogene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
-if ( dim(hpo)[1] > 0 ) {
+if ( !is.null(hpo) && dim(hpo)[1] > 0 ) {
     dotplot(hpo, title = "MSigDB Human Phenotype Ontology")
 }
 
 # Oncogenic
 onco <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = oncogene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
-if ( dim(onco)[1] > 0 ) {
+if ( !is.null(onco) && dim(onco)[1] > 0 ) {
     dotplot(onco, title = "MSigDB Oncogenic")
 }
 
 # The ImmuneSigDB  signatures
 im <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = imgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
-if ( dim(im)[1] > 0 ) {
+if ( !is.null(im) && dim(im)[1] > 0 ) {
     dotplot(im, title = "MSigDB ImmuneSigDB")
 }
 
 # The TF targets signatures
 tft <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = tftgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
-if ( dim(tft)[1] > 0 ) {
+if ( !is.null(tft) && dim(tft)[1] > 0 ) {
     dotplot(tft, title = "MSigDB TF targets")
 }
 
 # The Reactome Pathways
 rp <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = rpgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
-if ( dim(rp)[1] > 0 ) {
+if ( !is.null(rp) && dim(rp)[1] > 0 ) {
     dotplot(rp, title = "MSigDB Reactome Pathways")
 }
 
 # The WikiPathways signatures
 wp <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = wpgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
-if ( dim(wp)[1] > 0 ) {
+if ( !is.null(wp) && dim(wp)[1] > 0 ) {
     rownames(wp@result) <- gsub(wp@result$ID, pattern = "%.*$", replacement = "")
     wp@result$ID <- gsub(wp@result$ID, pattern = "%.*$", replacement = "")
     wp@result$Description <- gsub(wp@result$Description, pattern = "%.*$", replacement = "")
@@ -149,13 +149,13 @@ if ( dim(wp)[1] > 0 ) {
 
 # The BioCarta Pathways
 bc <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = bcgene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
-if ( dim(bc)[1] > 0 ) {
+if ( !is.null(bc) && dim(bc)[1] > 0 ) {
     dotplot(bc, title = "MSigDB BioCarta")
 }
 
 # The KEGG Pathways
 kegg <- enricher(peakAnno.genes.10k$geneId, TERM2GENE = kegggene, pvalueCutoff=pvalueCutoff, pAdjustMethod = pAdjustMethod, minGSSize = minGSSize, maxGSSize = maxGSSize, qvalueCutoff = qvalueCutoff)
-if ( dim(kegg)[1] > 0 ) {
+if ( !is.null(kegg) && dim(kegg)[1] > 0 ) {
     dotplot(kegg, title = "MSigDB KEGG")
 }
 

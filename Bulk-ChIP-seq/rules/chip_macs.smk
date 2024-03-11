@@ -1,3 +1,12 @@
+# generate raw pileup
+rule chip_pileup:
+    input:
+        bam = "{OUT_DIR}/Alignment/{name}.sortedByPos.rmdp.clean.bam",
+    output:
+        bdg = "{OUT_DIR}/Analysis/{name}_pileup.bdg",
+    shell:
+        "macs3 pileup -f BAMPE -i {input.bam} -o {output.bdg}"        
+
 # macs takes clean bam file to call peaks
 rule chip_callpeak:
     input:
