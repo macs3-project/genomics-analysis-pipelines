@@ -52,6 +52,7 @@ library(TxDb.Hsapiens.UCSC.hg38.knownGene)
 library(ChIPseeker)
 library(clusterProfiler)
 library(patchwork)
+library(DT)
 
 options(stringsAsFactors=F)
 
@@ -126,11 +127,11 @@ RunGiggle.cCRE <- function(peakbed, giggle.ccre.path){
 peak2gene.distance.cutoff <- 10000
 
 # parameters for enrichr/clusterprofiler
-cp.pvalueCutoff = 0.05
+cp.pvalueCutoff = 1.0
 cp.pAdjustMethod = "BH"
 cp.minGSSize = 5
 cp.maxGSSize = 500
-cp.qvalueCutoff = 0.2
+cp.qvalueCutoff = 1.0
 ```
 
 ```{r loadmsigdb, include=FALSE}
@@ -290,7 +291,7 @@ over.gss.flanking.peaks.entrez <- unique(gss.flanking[over.gss.flanking.peaks@fr
 # convert entrez to symbol
 over.gss.flanking.peaks.symbol <- unique(bitr(over.gss.flanking.peaks.entrez, toType="SYMBOL", fromType="ENTREZID", OrgDb="org.Hs.eg.db")$SYMBOL)
 
-write.table( over.gss.flanking.peaks.symbol, file="nearby_genes.tsv" )
+write.table( over.gss.flanking.peaks.symbol, file=paste0(pipeline.name,"_nearby_genes.tsv") )
 ```
 
 We can find `r length(over.gss.flanking.peaks.entrez)` genes near peaks.
@@ -299,78 +300,147 @@ Now we can ask what kind of gene functions they have by doing enrichment analysi
 
 ```{r echo=FALSE,dev="png",dpi=300,fig.height=8,fig.width=16,echo=F,message=F}
 ER <- enricher( over.gss.flanking.peaks.entrez, TERM2GENE = hgene, pvalueCutoff  = cp.pvalueCutoff, pAdjustMethod = cp.pAdjustMethod, minGSSize = cp.minGSSize, maxGSSize = cp.maxGSSize, qvalueCutoff = cp.qvalueCutoff )
-if ( dim(ER)[1] > 0 ) {
-    dotplot(ER, title="Hallmarks")
+
+n <- "Hallmarks"
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    dotplot(ER, title=n)
+}
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    datatable(as.data.frame(ER), rownames=F)
+    write.table( as.data.frame(ER), file=paste0(pipeline.name,"_",n,".tsv") )
 }
 ```
 
 ```{r echo=FALSE,dev="png",dpi=300,fig.height=8,fig.width=16,echo=F,message=F}
 ER <- enricher( over.gss.flanking.peaks.entrez, TERM2GENE = bpgene, pvalueCutoff  = cp.pvalueCutoff, pAdjustMethod = cp.pAdjustMethod, minGSSize = cp.minGSSize, maxGSSize = cp.maxGSSize, qvalueCutoff = cp.qvalueCutoff )
-if ( dim(ER)[1] > 0 ) {
-    dotplot(ER, title="GO BP")
+
+n <- "GP-BP"
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    dotplot(ER, title=n)
+}
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    datatable(as.data.frame(ER), rownames=F)
+    write.table( as.data.frame(ER), file=paste0(pipeline.name,"_",n,".tsv") )
 }
 ```
 
 ```{r echo=FALSE,dev="png",dpi=300,fig.height=8,fig.width=16,echo=F,message=F}
 ER <- enricher( over.gss.flanking.peaks.entrez, TERM2GENE = hpogene, pvalueCutoff  = cp.pvalueCutoff, pAdjustMethod = cp.pAdjustMethod, minGSSize = cp.minGSSize, maxGSSize = cp.maxGSSize, qvalueCutoff = cp.qvalueCutoff )
-if ( dim(ER)[1] > 0 ) {
-    dotplot(ER, title="Human Phenotype Ontology")
+
+n <- "Human-Phenotype-Ontology"
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    dotplot(ER, title=n)
+}
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    datatable(as.data.frame(ER), rownames=F)
+    write.table( as.data.frame(ER), file=paste0(pipeline.name,"_",n,".tsv") )
 }
 ```
 
 ```{r echo=FALSE,dev="png",dpi=300,fig.height=8,fig.width=16,echo=F,message=F}
 ER <- enricher( over.gss.flanking.peaks.entrez, TERM2GENE = oncogene, pvalueCutoff  = cp.pvalueCutoff, pAdjustMethod = cp.pAdjustMethod, minGSSize = cp.minGSSize, maxGSSize = cp.maxGSSize, qvalueCutoff = cp.qvalueCutoff )
-if ( dim(ER)[1] > 0 ) {
+if ( !is.null(ER) && nrow(ER) > 0 ) {
     dotplot(ER, title="Oncogenic Signature")
+}
+
+n <- "Oncogenic-Signature"
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    dotplot(ER, title=n)
+}
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    datatable(as.data.frame(ER), rownames=F)
+    write.table( as.data.frame(ER), file=paste0(pipeline.name,"_",n,".tsv") )
 }
 ```
 
 ```{r echo=FALSE,dev="png",dpi=300,fig.height=8,fig.width=16,echo=F,message=F}
 ER <- enricher( over.gss.flanking.peaks.entrez, TERM2GENE = imgene, pvalueCutoff  = cp.pvalueCutoff, pAdjustMethod = cp.pAdjustMethod, minGSSize = cp.minGSSize, maxGSSize = cp.maxGSSize, qvalueCutoff = cp.qvalueCutoff )
-if ( dim(ER)[1] > 0 ) {
-    dotplot(ER, title="immuneSigDB")
+
+n <- "immuneSigDB"
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    dotplot(ER, title=n)
+}
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    datatable(as.data.frame(ER), rownames=F)
+    write.table( as.data.frame(ER), file=paste0(pipeline.name,"_",n,".tsv") )
 }
 ```
 
 ```{r echo=FALSE,dev="png",dpi=300,fig.height=8,fig.width=16,echo=F,message=F}
 ER <- enricher( over.gss.flanking.peaks.entrez, TERM2GENE = tftgene, pvalueCutoff  = cp.pvalueCutoff, pAdjustMethod = cp.pAdjustMethod, minGSSize = cp.minGSSize, maxGSSize = cp.maxGSSize, qvalueCutoff = cp.qvalueCutoff )
-if ( dim(ER)[1] > 0 ) {
-    dotplot(ER, title="TF targets Signatures")
+
+n <- "TF-targets-Signatures"
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    dotplot(ER, title=n)
+}
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    datatable(as.data.frame(ER), rownames=F)
+    write.table( as.data.frame(ER), file=paste0(pipeline.name,"_",n,".tsv") )
 }
 ```
 
 ```{r echo=FALSE,dev="png",dpi=300,fig.height=8,fig.width=16,echo=F,message=F}
 ER <- enricher( over.gss.flanking.peaks.entrez, TERM2GENE = rpgene, pvalueCutoff  = cp.pvalueCutoff, pAdjustMethod = cp.pAdjustMethod, minGSSize = cp.minGSSize, maxGSSize = cp.maxGSSize, qvalueCutoff = cp.qvalueCutoff )
-if ( dim(ER)[1] > 0 ) {
-    dotplot(ER, title="Curated Reactome Pathways")
+
+n <- "Curated-Reactome-Pathways"
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    dotplot(ER, title=n)
+}
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    datatable(as.data.frame(ER), rownames=F)
+    write.table( as.data.frame(ER), file=paste0(pipeline.name,"_",n,".tsv") )
 }
 ```
 
 ```{r echo=FALSE,dev="png",dpi=300,fig.height=8,fig.width=16,echo=F,message=F}
 ER <- enricher( over.gss.flanking.peaks.entrez, TERM2GENE = wpgene, pvalueCutoff  = cp.pvalueCutoff, pAdjustMethod = cp.pAdjustMethod, minGSSize = cp.minGSSize, maxGSSize = cp.maxGSSize, qvalueCutoff = cp.qvalueCutoff )
-if ( dim(ER)[1] > 0 ) {
-    dotplot(ER, title="Curated Wikipathways")
+
+n <- "Curated-Wikipathways"
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    dotplot(ER, title=n)
+}
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    datatable(as.data.frame(ER), rownames=F)
+    write.table( as.data.frame(ER), file=paste0(pipeline.name,"_",n,".tsv") )
 }
 ```
 
 ```{r echo=FALSE,dev="png",dpi=300,fig.height=8,fig.width=16,echo=F,message=F}
 ER <- enricher( over.gss.flanking.peaks.entrez, TERM2GENE = bcgene, pvalueCutoff  = cp.pvalueCutoff, pAdjustMethod = cp.pAdjustMethod, minGSSize = cp.minGSSize, maxGSSize = cp.maxGSSize, qvalueCutoff = cp.qvalueCutoff )
-if ( dim(ER)[1] > 0 ) {
-    dotplot(ER, title="Curated Biocarta")
+
+n <- "Curated-Biocarta"
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    dotplot(ER, title=n)
+}
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    datatable(as.data.frame(ER), rownames=F)
+    write.table( as.data.frame(ER), file=paste0(pipeline.name,"_",n,".tsv") )
 }
 ```
 
 ```{r echo=FALSE,dev="png",dpi=300,fig.height=8,fig.width=16,echo=F,message=F}
 ER <- enricher( over.gss.flanking.peaks.entrez, TERM2GENE = kegggene, pvalueCutoff  = cp.pvalueCutoff, pAdjustMethod = cp.pAdjustMethod, minGSSize = cp.minGSSize, maxGSSize = cp.maxGSSize, qvalueCutoff = cp.qvalueCutoff )
-if ( dim(ER)[1] > 0 ) {
-    dotplot(ER, title="Curated KEGG")
+
+n <- "Curated-KEGG"
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    dotplot(ER, title=n)
+}
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    datatable(as.data.frame(ER), rownames=F)
+    write.table( as.data.frame(ER), file=paste0(pipeline.name,"_",n,".tsv") )
 }
 ```
 
 ```{r echo=FALSE,dev="png",dpi=300,fig.height=8,fig.width=16,echo=F,message=F}
 ER <- enricher( over.gss.flanking.peaks.entrez, TERM2GENE = cpgene, pvalueCutoff  = cp.pvalueCutoff, pAdjustMethod = cp.pAdjustMethod, minGSSize = cp.minGSSize, maxGSSize = cp.maxGSSize, qvalueCutoff = cp.qvalueCutoff )
-if ( dim(ER)[1] > 0 ) {
-    dotplot(ER, title="ALL Curated Canonical Pathways")
+
+n <- "ALL-Curated-Canonical-Pathways"
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    dotplot(ER, title=n)
+}
+if ( !is.null(ER) && nrow(ER) > 0 ) {
+    datatable(as.data.frame(ER), rownames=F)
+    write.table( as.data.frame(ER), file=paste0(pipeline.name,"_",n,".tsv") )
 }
 ```
 

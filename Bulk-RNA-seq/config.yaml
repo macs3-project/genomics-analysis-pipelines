@@ -18,13 +18,13 @@ options:
   # options for the analysis
   # mapping for paired-end or not, choose Y or N
   paired: Y
-
+  # stranded or not
   stranded: N
   # aligner
   # Currently, we only support STAR
   mapper: STAR
   # species: either hs for human or mm for mouse
-  species: mm
+  species: hs
   # qualification of expression
   counter: rsem
   # number of cores to use

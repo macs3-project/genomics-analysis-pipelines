@@ -89,6 +89,8 @@ else:
 
 # individual sample
 PEAKS   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=tnames)
+BIGWIG_PILEUP_T = expand("%s/Analysis/{sample}_pileup.bw" % (OUT_DIR), sample=tnames)
+BIGWIG_PILEUP_C = expand("%s/Analysis/{sample}_pileup.bw" % (OUT_DIR), sample=cnames)
 BIGWIG_RAW   = expand("%s/Analysis/{sample}_t_raw.bw" % (OUT_DIR), sample=tnames)
 BIGWIG_LOGFC   = expand("%s/Analysis/{sample}_logfc.bw" % (OUT_DIR), sample=tnames)
 BIGWIG_PSCORE   = expand("%s/Analysis/{sample}_pscore.bw" % (OUT_DIR), sample=tnames)
@@ -121,7 +123,7 @@ COMBINED_PEAK_MOTIF= "%s/Analysis/%s_HOMER.tar.gz" % (OUT_DIR, config["outprefix
 REPORTHTML="%s/Analysis/%s_report.html" % (OUT_DIR, config["outprefix"])
 
 TARGET = []
-TARGET.extend(PEAKS + BIGWIG_RAW + BIGWIG_SPMR + BIGWIG_LOGFC + BIGWIG_PSCORE + SEQ_STAT_T + SEQ_STAT_C + PEAK_STAT + PEAK_ANNO + PEAK_GIGGLE + [SEQ_QC_SUMMARY, PEAK_QC_SUMMARY, BIGWIG_COR_SUMMARY, GSSHEATMAP, GSSPROFILE,] + [COMBINED_PEAKS, COMBINED_BIGWIG_RAW, COMBINED_BIGWIG_LOGFC, COMBINED_BIGWIG_PSCORE, COMBINED_BIGWIG_SPMR, COMBINED_PEAK_ANNO, COMBIEND_PEAK_GIGGLE, COMBINED_PEAK_MOTIF, REPORTHTML] )
+TARGET.extend(PEAKS + BIGWIG_PILEUP_T + BIGWIG_PILEUP_C + BIGWIG_RAW + BIGWIG_SPMR + BIGWIG_LOGFC + BIGWIG_PSCORE + SEQ_STAT_T + SEQ_STAT_C + PEAK_STAT + PEAK_ANNO + PEAK_GIGGLE + [SEQ_QC_SUMMARY, PEAK_QC_SUMMARY, BIGWIG_COR_SUMMARY, GSSHEATMAP, GSSPROFILE,] + [COMBINED_PEAKS, COMBINED_BIGWIG_RAW, COMBINED_BIGWIG_LOGFC, COMBINED_BIGWIG_PSCORE, COMBINED_BIGWIG_SPMR, COMBINED_PEAK_ANNO, COMBIEND_PEAK_GIGGLE, COMBINED_PEAK_MOTIF, REPORTHTML] )
 
 # decide certain parameters based on config.yaml
 mapper = config["options"]["mapper"]

@@ -17,7 +17,7 @@ rule chip_callpeak_combined:
         macs3 callpeak --outdir {OUT_DIR}/Analysis -n {params.name} --cutoff-analysis {macs3_callpeak_option} -t {input.bam} -c {input.cbam};
         mv {OUT_DIR}/Analysis/{params.name}_treat_pileup.bdg {output.bdg_raw_t};
         mv {OUT_DIR}/Analysis/{params.name}_control_lambda.bdg {output.bdg_raw_c};
-        macs3 bdgcmp -t {output.bdg_raw_t} -c {output.bdg_raw_c} -m ppois logFE -o {output.bdg_pscore} {output.bdg_logfc};
+        macs3 bdgcmp -t {output.bdg_raw_t} -c {output.bdg_raw_c} -p 0.1 -m ppois logFE -o {output.bdg_pscore} {output.bdg_logfc};
         macs3 callpeak --outdir {OUT_DIR}/Analysis -n {params.name}.spmr {macs3_callpeak_option} --SPMR -t {input.bam} -c {input.cbam};
         mv {OUT_DIR}/Analysis/{params.name}.spmr_treat_pileup.bdg {output.bdg_spmr_t};
         rm -f {OUT_DIR}/Analysis/{params.name}.spmr*;

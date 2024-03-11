@@ -72,3 +72,4 @@ annotation:
   giggledb: /path/to/giggledb/
   # MSigDB path
   MSigDB: /path/to/msigdb/
+  
