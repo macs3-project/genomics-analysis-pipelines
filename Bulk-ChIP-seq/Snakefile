@@ -84,6 +84,9 @@ elif config['options']['species'] == 'mm10':
 elif config['options']['species'] == 'mm39':
     REPORTRMD = 'Template_mm39.Rmd'
     species_macs3_code = 'mm'
+elif config['options']['species'] == 'sacCer3':
+    DARRMD = 'Template_sacCer3.Rmd'
+    species_macs3_code = '12000000'
 else:
     raise Exception("species %s not supported!" % (config['options']['species']) )
 
@@ -104,6 +107,12 @@ PEAK_GIGGLE= expand("%s/Analysis/{sample}_peaks.narrowPeak_giggle_cistrome.pdf" 
 #BIN_COUNT = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=tnames)
 
 # combined files
+PEAK_STAT.append("%s/QC/%s.peakstat.txt" % (OUT_DIR, config["outprefix"]))
+BIGWIG_RAW.append("%s/Analysis/%s_t_raw.bw" % (OUT_DIR, config["outprefix"]))
+BIGWIG_LOGFC.append("%s/Analysis/%s_logfc.bw" % (OUT_DIR, config["outprefix"]))
+BIGWIG_PSCORE.append("%s/Analysis/%s_pscore.bw" % (OUT_DIR, config["outprefix"]))
+BIGWIG_SPMR.append("%s/Analysis/%s_t_spmr.bw" % (OUT_DIR, config["outprefix"]))
+
 SEQ_QC_SUMMARY = "%s/QC/%s.seqqc.stat.summary.txt" % (OUT_DIR, config["outprefix"])
 PEAK_QC_SUMMARY = "%s/QC/%s.peakqc.stat.summary.txt" % (OUT_DIR, config["outprefix"])
 BIGWIG_COR_SUMMARY = "%s/QC/%s.bigwig.cor.summary.txt" % (OUT_DIR, config["outprefix"])

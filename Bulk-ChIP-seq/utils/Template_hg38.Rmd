@@ -204,33 +204,44 @@ colnames(peakqc) <- c("sample name", "replicate", "total pairs", "total peaks", 
 
 ```
 
+Sequencing QC for each replicate. The 'valid reads' are those reads after filtering the low quality reads, the duplicated reads, and the chrM reads.
+
 ```{r showsqctable}
 DT::datatable(seqqc)
 ```
 
 ## Peakcalling QC
 
+Peak level QC for each replicate and 'All' replicates combined.
+
 ```{r showpqctable}
 DT::datatable(peakqc)
 ```
 
 ## ChIP signal distribution around gene start sites
+
+We use `deeptools` to draw the heatmap of signals (Signal Per Million Reads) around gene TSSs, and plot the aggregation plots. We plot each replicates and combined replicates.
+
 ```{r chipqcsignal}
 knitr::include_graphics( c( gss.heatmap, gss.profile ) )
 ```
 
 # Annotation of peaks
 
+Now we can focus on the `r length(peaks)` peaks from combining all replicates.
+
 ## Genomic distributions of peaks
 
-Peaks over the whole genome:
+Peak coverage over the whole genome:
 
-```{r dev="png",dpi=300,fig.height=8,fig.width=8,echo=F,message=F }
+```{r peakcoverage, dev="png",dpi=300,fig.height=8,fig.width=8,echo=F,message=F }
 p <- covplot(peaks, title="Peaks over Chromosomes") + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), axis.line.y = element_blank())
 p
 ```
 
 ## Genomic Features at peaks
+
+The genomic features overlapping the peaks can be seen below. We include different ranges of promoters, the UTRs, exons, introns, downstream or distal intergenic regions. Please beware that the overlapping feature, if multiple features are found, is decided by a hierarchy (as shown in the legend from top to bottom). Also, we show the distance from the peakt to the TSS in the second plot.
 
 ```{r annotatepeaks, fig.height=8, fig.width=8}
 peakAnno <- annotatePeak( peaks, TxDb=TxDb.Hsapiens.UCSC.hg38.knownGene, annoDb="org.Hs.eg.db", tssRegion=c(-3000, 3000), verbose=FALSE )
@@ -249,7 +260,7 @@ giggle.res <- RunGiggle.Cistrome( peak.file, cistrome.gigglepath, "GRCh38")
 
 There are `r length(rownames(giggle.res))` Cistromes enriched (with at least 1 peak overlap and oddsratio>1) in our peaks. The complete list are shown below (empty if there is none):
 
-```{r echo=FALSE}
+```{r giggle.table, echo=FALSE}
 if ( length(rownames(giggle.res)) >= 0 ) {
     DT::datatable(giggle.res[order(-giggle.res$giggle_score),])
 }
@@ -258,7 +269,7 @@ if ( length(rownames(giggle.res)) >= 0 ) {
 
 We can plot the odds-ratio in x-axis and pvalue (Fisher-test right tail test) in y-axis, while highlighting the top 10 Cistrome hits (none if thre is no hit):
 
-```{r dev="png",dpi=300,fig.height=8,fig.width=8,echo=F,message=F }
+```{r giggple.plot, dev="png",dpi=300,fig.height=8,fig.width=8,echo=F,message=F }
 if ( length(rownames(giggle.res)) >= 0 ) {
   giggle.res.top10 <- giggle.res[order(giggle.res$giggle_score,decreasing = T),][1:10,]
 
@@ -268,6 +279,7 @@ if ( length(rownames(giggle.res)) >= 0 ) {
   p <- ggplot(data=giggle.res, aes(x=odds_ratio, y=fisher_right_tail, label=labels)) + geom_point() + xlim(0,4) + ylim(0,250)
   p<-p + geom_label_repel(force=20, size=2, data = giggle.res.top10, max.overlaps = Inf) + xlab("Giggle log10 odds_ratio") + ylab("Giggle Fisher-test right-tail -log10 pvalue") + annotate(geom = 'text', label = t, x = Inf, y = -Inf, hjust = 1., vjust = -0.5)
   p
+  #ggsave( paste0(pipeline.name,"_cistrome_analysis.pdf"), plot = p, device = "pdf", width = 10, height = 10, units = "in" )
 }
 
 ```

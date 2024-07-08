@@ -5,7 +5,7 @@ rule chip_peakanno:
     output:
         pdf = "{OUT_DIR}/Analysis/{name}_peaks.narrowPeak_chip_annotation.pdf"
     params:
-        gmtfolder = config["annotation"]["GMT"],
+        gmtfolder = config["annotation"]["MSigDB"],
     shell:
         "utils/chip_annotate.R {input.peak} {params.gmtfolder};"
 
@@ -59,6 +59,7 @@ rule report:
 	Rscript -e "library(rmarkdown); rmarkdown::render('{params.rmd}', output_format='html_document', output_file='report.html', params = list( name ='{params.expname}', seqqc = '../../{input.seqqc}', peakqc = '../../{input.peakqc}', gssheatmap = '../../{input.gssheatmap}', gssprofile = '../../{input.gssprofile}', gmtfolder = '{params.gmtfolder}', peakfile = '../../{input.peakfile}', cistromedb = '{params.cistromedb}') )"
         mv report.html ../../{output.report_html}
 	mv *.tsv ../Analysis/
+	#mv *.pdf ../Analysis/
 	cd ../../
         rm -rf {params.tmpdir}
 	"""

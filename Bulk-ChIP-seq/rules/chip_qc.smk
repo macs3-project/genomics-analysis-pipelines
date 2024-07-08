@@ -127,5 +127,6 @@ rule chip_bwcor:
     shell:
         """
         echo "# BigWig Correlation, whole genome profiles" > {output.bwcoroutput};
-        bigWigCorrelate {params.bwlist} >> {output.bwcoroutput};
+	echo {params.bwlist} > list.txt;
+        bigWigCorrelate list.txt >> {output.bwcoroutput};
         """

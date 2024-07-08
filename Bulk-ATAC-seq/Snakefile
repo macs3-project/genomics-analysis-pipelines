@@ -39,6 +39,9 @@ elif config['options']['species'] == 'mm10':
 elif config['options']['species'] == 'mm39':
     DARRMD = 'Template_ATACseq_mm39.Rmd'
     species_macs3_code = 'mm'
+elif config['options']['species'] == 'sacCer3':
+    DARRMD = 'Template_ATACseq_sacCer3.Rmd'
+    species_macs3_code = '12000000'
 else:
     raise Exception("species %s not supported!" % (config['options']['species']) ) 
 

@@ -23,7 +23,12 @@ def main():
         dhs_peaks = -1
 
         tmp = os.path.basename(filename).rstrip(".peakstat.txt")
-        (n, r) = re.match("(.*?)\_r(\d+)",tmp).groups()
+        match = re.match("(.*?)\_r(\d+)",tmp)
+        if match:
+            (n, r) = match.groups()
+        else:
+            n = "All"
+            r = "-"
 
         fhd = open( filename, "r" )
 
