@@ -1,7 +1,7 @@
 outprefix: EXPNAME
 
 # raw data location
-fastqdir: fastq/
+fastqdir: /projects/rpci/tliu4/codes/genomics-analysis-pipelines/test/Bulk-ChIP-seq/fastq
 
 # sample name for condition 1
 sample: sample_name
@@ -25,10 +25,8 @@ options:
   # Choose bwa-mem for traditional NGS data
   mapper: bwa-mem
   # macs3 related options
-  # species: either hs for human or mm for mouse
-  # You can also pass the customized effective genome size to it
-  # since this is for macs `-g` option only.
-  species: hs
+  # species: hg19, hg38, mm10, mm39
+  species: hg38
   # pvalue or qvalue
   peakcalling_cutoff_method: qvalue
   # cutoff value
@@ -66,4 +64,12 @@ annotation:
   CEASlib: /path/to/db/genome/GRCh38/GRCh38.refGene
   # gene annotation in GTF
   geneGTF: /path/to/db/genome/GRCh38/gencode.v22.annotation.gtf
-
+  # GMT files for functional annotation
+  GMT: /path/to/db/MSigDB_gmt_files
+  # Giggle exec
+  giggle: /path/to/giggle_bin
+  # Giggle DB
+  giggledb: /path/to/giggledb/
+  # MSigDB path
+  MSigDB: /path/to/msigdb/
+  
