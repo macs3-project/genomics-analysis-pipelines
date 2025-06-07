@@ -92,6 +92,7 @@ else:
 
 # individual sample
 PEAKS   = expand("%s/Analysis/{sample}_peaks.narrowPeak" % (OUT_DIR), sample=tnames)
+PEAKS_XLS   = expand("%s/Analysis/{sample}_peaks.xls" % (OUT_DIR), sample=tnames)
 BIGWIG_PILEUP_T = expand("%s/Analysis/{sample}_pileup.bw" % (OUT_DIR), sample=tnames)
 BIGWIG_PILEUP_C = expand("%s/Analysis/{sample}_pileup.bw" % (OUT_DIR), sample=cnames)
 BIGWIG_RAW   = expand("%s/Analysis/{sample}_t_raw.bw" % (OUT_DIR), sample=tnames)
@@ -107,7 +108,7 @@ PEAK_GIGGLE= expand("%s/Analysis/{sample}_peaks.narrowPeak_giggle_cistrome.pdf" 
 #BIN_COUNT = expand("%s/Analysis/{sample}.bincount.txt" % (OUT_DIR), sample=tnames)
 
 # combined files
-#PEAK_STAT.append("%s/QC/%s.peakstat.txt" % (OUT_DIR, config["outprefix"]))
+PEAK_STAT.append("%s/QC/%s.peakstat.txt" % (OUT_DIR, config["outprefix"]))
 BIGWIG_RAW.append("%s/Analysis/%s_t_raw.bw" % (OUT_DIR, config["outprefix"]))
 BIGWIG_LOGFC.append("%s/Analysis/%s_logfc.bw" % (OUT_DIR, config["outprefix"]))
 BIGWIG_PSCORE.append("%s/Analysis/%s_pscore.bw" % (OUT_DIR, config["outprefix"]))
@@ -121,6 +122,7 @@ GSSHEATMAP = "%s/Analysis/%s.gss.heatmap.png" % (OUT_DIR, config["outprefix"])
 GSSPROFILE = "%s/Analysis/%s.gss.profile.png" % (OUT_DIR, config["outprefix"])
 
 COMBINED_PEAKS = "%s/Analysis/%s_peaks.narrowPeak" % (OUT_DIR, config["outprefix"])
+COMBINED_PEAKS_XLS = "%s/Analysis/%s_peaks.xls" % (OUT_DIR, config["outprefix"])
 COMBINED_BIGWIG_RAW   = "%s/Analysis/%s_t_raw.bw" % (OUT_DIR, config["outprefix"])
 COMBINED_BIGWIG_LOGFC   = "%s/Analysis/%s_logfc.bw" % (OUT_DIR, config["outprefix"])
 COMBINED_BIGWIG_PSCORE   = "%s/Analysis/%s_pscore.bw" % (OUT_DIR, config["outprefix"])

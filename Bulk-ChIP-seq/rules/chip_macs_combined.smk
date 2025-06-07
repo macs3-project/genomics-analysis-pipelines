@@ -5,6 +5,7 @@ rule chip_callpeak_combined:
         cbam = expand("%s/Alignment/{control}.sortedByPos.rmdp.clean.bam" % (OUT_DIR), control=cnames),
     output:
         peak = COMBINED_PEAKS,
+	peak_xls = COMBINED_PEAKS_XLS,
         bdg_raw_t = "%s/Analysis/%s_t_raw.bdg" % (OUT_DIR, config["outprefix"]),
         bdg_raw_c = "%s/Analysis/%s_c_raw.bdg" % (OUT_DIR, config["outprefix"]),
 	bdg_logfc = "%s/Analysis/%s_logfc.bdg" % (OUT_DIR, config["outprefix"]),
